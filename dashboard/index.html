@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeshConnect Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* ── LOGIN ── */
+        #login-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-box {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 40px;
+            width: 380px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .login-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #60a5fa;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        .login-sub {
+            color: #475569;
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 32px;
+        }
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 11px 14px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: #60a5fa; }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+        .btn-login:hover { background: #2563eb; }
+        .login-error {
+            color: #f87171;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+
+        /* ── DASHBOARD ── */
+        #dashboard-page { display: none; }
+
+        .header {
+            background: #1e293b;
+            border-bottom: 1px solid #1e293b;
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header-logo { font-size: 18px; font-weight: 700; color: #60a5fa; }
+        .header-right { display: flex; align-items: center; gap: 14px; }
+        .refresh-info { font-size: 12px; color: #334155; }
+        .btn-logout {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #64748b;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-logout:hover { background: #1e293b; color: #94a3b8; }
+
+        .content {
+            padding: 28px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Stats */
+        .stats { display: flex; gap: 16px; margin-bottom: 28px; }
+        .stat {
+            background: #1e293b;
+            border: 1px solid #1e3a5f;
+            border-radius: 10px;
+            padding: 18px 24px;
+            min-width: 110px;
+        }
+        .stat-val { font-size: 30px; font-weight: 700; }
+        .stat-lbl { font-size: 12px; color: #475569; margin-top: 2px; }
+        .stat.green .stat-val { color: #34d399; }
+        .stat.red   .stat-val { color: #f87171; }
+        .stat.blue  .stat-val { color: #60a5fa; }
+
+        /* Section header */
+        .section-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .section-title { font-size: 18px; font-weight: 600; }
+        .section-sub { font-size: 13px; color: #475569; margin-left: 8px; }
+        .btn-refresh {
+            padding: 7px 16px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 7px;
+            color: #64748b;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-refresh:hover { background: #334155; color: #94a3b8; }
+
+        /* Device grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 14px;
+        }
+
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 3px solid #334155;
+            transition: border-color 0.2s, transform 0.1s;
+        }
+        .card:hover { transform: translateY(-1px); }
+        .card.online  { border-left-color: #34d399; }
+        .card.offline { border-left-color: #f87171; }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .card-icon { font-size: 28px; line-height: 1; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+        }
+        .badge.online  { background: rgba(52,211,153,.12); color: #34d399; }
+        .badge.offline { background: rgba(248,113,113,.12); color: #f87171; }
+        .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .dot.pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%,100% { opacity: 1; }
+            50%      { opacity: .35; }
+        }
+
+        .card-name  { font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 3px; }
+        .card-model { font-size: 13px; color: #475569; margin-bottom: 12px; }
+        .card-meta  { display: flex; flex-direction: column; gap: 3px; }
+        .meta-row   { font-size: 12px; color: #475569; }
+        .meta-row span { color: #64748b; }
+
+        /* Empty state */
+        .empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 0;
+            color: #334155;
+        }
+        .empty-icon { font-size: 52px; margin-bottom: 16px; }
+        .empty h3 { font-size: 18px; color: #475569; margin-bottom: 8px; }
+        .empty p  { font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-page">
+    <div class="login-box">
+        <div class="login-logo">🔷 MeshConnect</div>
+        <div class="login-sub">Device Management Dashboard</div>
+        <div class="form-group">
+            <label>Username</label>
+            <input id="username" type="text" placeholder="admin" autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-login" onclick="login()">Sign In</button>
+        <div class="login-error" id="login-error">Invalid username or password</div>
+    </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard-page">
+    <div class="header">
+        <div class="header-logo">🔷 MeshConnect</div>
+        <div class="header-right">
+            <span class="refresh-info">Auto-refresh: 5s</span>
+            <button class="btn-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="stats">
+            <div class="stat blue">
+                <div class="stat-val" id="s-total">0</div>
+                <div class="stat-lbl">Total Devices</div>
+            </div>
+            <div class="stat green">
+                <div class="stat-val" id="s-online">0</div>
+                <div class="stat-lbl">Online</div>
+            </div>
+            <div class="stat red">
+                <div class="stat-val" id="s-offline">0</div>
+                <div class="stat-lbl">Offline</div>
+            </div>
+        </div>
+
+        <div class="section-hdr">
+            <div>
+                <span class="section-title">Devices</span>
+                <span class="section-sub" id="device-count"></span>
+            </div>
+            <button class="btn-refresh" onclick="fetchDevices()">↻ Refresh</button>
+        </div>
+
+        <div class="grid" id="grid">
+            <div class="empty">
+                <div class="empty-icon">📱</div>
+                <h3>No devices connected</h3>
+                <p>Install the Android app and tap "Start Service"</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CREDS = { user: 'admin', pass: 'admin123' };
+    const API   = '/api/devices';
+    let timer   = null;
+
+    window.addEventListener('load', () => {
+        if (sessionStorage.getItem('auth') === '1') showDashboard();
+        document.getElementById('password').addEventListener('keydown', e => {
+            if (e.key === 'Enter') login();
+        });
+    });
+
+    function login() {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value;
+        if (u === CREDS.user && p === CREDS.pass) {
+            sessionStorage.setItem('auth', '1');
+            showDashboard();
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem('auth');
+        clearInterval(timer);
+        document.getElementById('dashboard-page').style.display = 'none';
+        document.getElementById('login-page').style.display = 'flex';
+        document.getElementById('password').value = '';
+        document.getElementById('login-error').style.display = 'none';
+    }
+
+    function showDashboard() {
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('dashboard-page').style.display = 'block';
+        fetchDevices();
+        timer = setInterval(fetchDevices, 5000);
+    }
+
+    async function fetchDevices() {
+        try {
+            const r = await fetch(API);
+            if (!r.ok) return;
+            render(await r.json());
+        } catch (e) { /* server unreachable */ }
+    }
+
+    function render(list) {
+        const online  = list.filter(d => d.online).length;
+        const offline = list.length - online;
+        document.getElementById('s-total').textContent  = list.length;
+        document.getElementById('s-online').textContent = online;
+        document.getElementById('s-offline').textContent= offline;
+
+        const grid = document.getElementById('grid');
+
+        if (!list.length) {
+            document.getElementById('device-count').textContent = '';
+            grid.innerHTML = `
+                <div class="empty">
+                    <div class="empty-icon">📱</div>
+                    <h3>No devices connected</h3>
+                    <p>Install the Android app and tap "Start Service"</p>
+                </div>`;
+            return;
+        }
+
+        document.getElementById('device-count').textContent =
+            `${list.length} total · ${online} online`;
+
+        list.sort((a, b) => b.online - a.online);
+
+        grid.innerHTML = list.map(d => {
+            const cls   = d.online ? 'online' : 'offline';
+            const label = d.online ? 'Online' : 'Offline';
+            const name  = esc(d.name || d.model || 'Unknown Device');
+            const maker = esc(d.manufacturer || '');
+            const model = esc(d.model || '');
+            const os    = esc(d.os_version || '?');
+            const id    = esc((d.id || '?').slice(0, 16));
+            return `
+            <div class="card ${cls}">
+                <div class="card-top">
+                    <div class="card-icon">📱</div>
+                    <div class="badge ${cls}">
+                        <div class="dot ${d.online ? 'pulse' : ''}"></div>
+                        ${label}
+                    </div>
+                </div>
+                <div class="card-name">${name}</div>
+                <div class="card-model">${maker} ${model}</div>
+                <div class="card-meta">
+                    <div class="meta-row">Android <span>${os}</span></div>
+                    <div class="meta-row">Last seen <span>${ago(d.last_seen)}</span></div>
+                    <div class="meta-row" style="font-family:monospace;font-size:11px;color:#334155">${id}…</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function esc(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function ago(ts) {
+        if (!ts) return 'Never';
+        const sec = Math.floor((Date.now() - new Date(ts)) / 1000);
+        if (sec <  5) return 'Just now';
+        if (sec < 60) return sec + 's ago';
+        if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+        return new Date(ts).toLocaleTimeString();
+    }
+</script>
+</body>
+</html>

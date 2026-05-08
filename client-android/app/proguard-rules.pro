@@ -1,0 +1,3 @@
+-keep class com.meshconnect.** { *; }
+-keep class okhttp3.** { *; }
+-dontwarn okhttp3.**
