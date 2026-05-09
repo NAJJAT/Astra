@@ -377,6 +377,80 @@
         }
         .modal-actions a:hover { background: #2563eb; }
 
+        /* Notify modal */
+        .notify-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 70;
+            padding: 24px;
+        }
+        .notify-modal.show { display: flex; }
+        .notify-content {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            width: min(420px, 95vw);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .notify-content h3 {
+            font-size: 16px;
+            color: #f1f5f9;
+            margin: 0;
+        }
+        .notify-content label {
+            display: block;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .notify-content input,
+        .notify-content textarea {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 9px 11px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            resize: vertical;
+        }
+        .notify-content input:focus,
+        .notify-content textarea:focus { border-color: #3b82f6; }
+        .notify-content textarea { min-height: 70px; }
+        .notify-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .notify-actions button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #cbd5e1;
+        }
+        .notify-actions .send {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
+            font-weight: 600;
+        }
+        .notify-actions .send:hover { background: #2563eb; }
+
         /* File browser modal */
         .files-modal {
             position: fixed;
@@ -636,6 +710,24 @@
 
 <div class="toasts" id="toasts"></div>
 
+<div class="notify-modal" id="notify-modal">
+    <div class="notify-content">
+        <h3>🔔 Send notification</h3>
+        <div>
+            <label>Title</label>
+            <input id="notify-title" placeholder="MeshConnect" maxlength="80">
+        </div>
+        <div>
+            <label>Message</label>
+            <textarea id="notify-text" placeholder="Your message…" maxlength="500"></textarea>
+        </div>
+        <div class="notify-actions">
+            <button onclick="closeNotify()">Cancel</button>
+            <button class="send" onclick="sendNotify()">Send</button>
+        </div>
+    </div>
+</div>
+
 <div class="files-modal" id="files-modal">
     <div class="files-content">
         <div class="files-header">
@@ -646,6 +738,8 @@
             <button onclick="navUp()">⬆ Up</button>
             <input id="files-path" placeholder="/sdcard">
             <button onclick="navGo()">Go</button>
+            <button onclick="document.getElementById('upload-input').click()" title="Upload file from your computer to this folder on the phone">⬆ Upload</button>
+            <input type="file" id="upload-input" style="display:none">
         </div>
         <div class="files-list" id="files-list">
             <div class="files-loading">Loading…</div>
@@ -714,8 +808,56 @@
             openFiles(btn.dataset.id);
             return;
         }
+        if (btn.dataset.cmd === 'notify-prompt') {
+            openNotify(btn.dataset.id);
+            return;
+        }
         runCommand(btn);
     });
+
+    let notifyDeviceId = null;
+    function openNotify(deviceId) {
+        notifyDeviceId = deviceId;
+        document.getElementById('notify-title').value = 'MeshConnect';
+        document.getElementById('notify-text').value  = '';
+        document.getElementById('notify-modal').classList.add('show');
+        setTimeout(() => document.getElementById('notify-text').focus(), 50);
+    }
+    function closeNotify() {
+        document.getElementById('notify-modal').classList.remove('show');
+        notifyDeviceId = null;
+    }
+    async function sendNotify() {
+        if (!notifyDeviceId) return;
+        const title = document.getElementById('notify-title').value.trim() || 'MeshConnect';
+        const text  = document.getElementById('notify-text').value.trim();
+        if (!text) {
+            toast('Message is required', 'error');
+            return;
+        }
+        const id = notifyDeviceId;
+        closeNotify();
+        try {
+            const r = await fetch(`/api/devices/${encodeURIComponent(id)}/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'notify', title, text })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                toast(`Notify failed: ${err.error || r.status}`, 'error');
+                return;
+            }
+            const data = await r.json();
+            if (data.result?.success) {
+                toast(`🔔 Sent (${data.latency_ms} ms)`, 'success');
+            } else {
+                toast(`Phone error: ${data.result?.message || 'unknown'}`, 'error');
+            }
+        } catch (e) {
+            toast('Network error', 'error');
+        }
+    }
 
     async function runCommand(btn) {
         const id   = btn.dataset.id;
@@ -922,6 +1064,76 @@
         if (e.key === 'Enter') navGo();
     });
 
+    document.getElementById('upload-input').addEventListener('change', async e => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        if (!filesDeviceId || !filesCurrentPath) {
+            toast('Open a folder on the phone first', 'error');
+            return;
+        }
+        await uploadToPhone(file);
+    });
+
+    async function uploadToPhone(file) {
+        if (file.size > 100 * 1024 * 1024) {
+            toast('File too large (>100MB)', 'error');
+            return;
+        }
+        toast(`Uploading ${file.name} (${fmtKB(file.size)}) to server…`, '');
+        let uploadId, filename;
+        try {
+            const r = await fetch('/api/uploads', {
+                method: 'POST',
+                headers: {
+                    'X-Filename': encodeURIComponent(file.name),
+                    'Content-Type': 'application/octet-stream'
+                },
+                body: file
+            });
+            if (!r.ok) {
+                toast(`Server upload failed: ${r.status}`, 'error');
+                return;
+            }
+            const data = await r.json();
+            uploadId = data.upload_id;
+            filename = data.filename;
+        } catch (err) {
+            toast('Network error during upload', 'error');
+            return;
+        }
+
+        toast(`Sending ${filename} to phone → ${filesCurrentPath}`, '');
+        try {
+            const r = await fetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    command: 'upload_file',
+                    upload_id: uploadId,
+                    filename: filename,
+                    dest_dir: filesCurrentPath
+                })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                toast(`Phone upload failed: ${err.error || r.status}`, 'error');
+                return;
+            }
+            const data = await r.json();
+            const result = data.result || {};
+            if (result.success) {
+                toast(`✓ Saved to ${result.path}`, 'success');
+                loadFiles(filesCurrentPath);
+                fetch(`/api/uploads/${encodeURIComponent(uploadId)}`, { method: 'DELETE' });
+            } else {
+                toast(`Phone error: ${result.message || 'unknown'}`, 'error');
+            }
+        } catch (err) {
+            toast('Network error', 'error');
+        }
+    }
+
     async function fetchScreenshots() {
         try {
             const r = await fetch('/api/screenshots');
@@ -997,6 +1209,7 @@
         if (e.key === 'Escape') {
             closeModal();
             closeFiles();
+            closeNotify();
         }
     });
 
@@ -1089,6 +1302,7 @@
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="camera-back"  data-facing="back"  ${d.online ? '' : 'disabled'}>📸 Back-Cam</button>
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="camera-front" data-facing="front" ${d.online ? '' : 'disabled'}>🤳 Front-Cam</button>
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="open_files" ${d.online ? '' : 'disabled'}>📁 Files</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="notify-prompt" ${d.online ? '' : 'disabled'}>🔔 Notify</button>
             </div>
         </div>`;
     }

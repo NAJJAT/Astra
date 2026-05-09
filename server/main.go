@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -22,6 +23,7 @@ const (
 	devicesFile     = "/root/data/devices.json"
 	screenshotsDir  = "/root/data/screenshots"
 	filesDir        = "/root/data/files"
+	uploadsDir      = "/root/data/uploads"
 	maxScreenshotKB = 10 * 1024  // 10 MB
 	maxFileKB       = 100 * 1024 // 100 MB
 )
@@ -251,7 +253,9 @@ var allowedCommands = map[string]bool{
 	"screenshot":    true,
 	"ls":            true,
 	"download_file": true,
+	"upload_file":   true,
 	"camera":        true,
+	"notify":        true,
 }
 
 func isValidID(s string) bool {
@@ -349,6 +353,108 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request, deviceID, reqID s
 	})
 }
 
+func uploadsRouteHandler(w http.ResponseWriter, r *http.Request) {
+	rest := strings.TrimPrefix(r.URL.Path, "/api/uploads")
+	rest = strings.TrimPrefix(rest, "/")
+	if rest == "" {
+		if r.Method == http.MethodPost {
+			uploadCreateHandler(w, r)
+		} else {
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+		return
+	}
+	switch r.Method {
+	case http.MethodGet, http.MethodHead:
+		uploadServeHandler(w, r, rest)
+	case http.MethodDelete:
+		uploadDeleteHandler(w, r, rest)
+	default:
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+	}
+}
+
+func uploadCreateHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxFileKB*1024))
+	if err != nil {
+		http.Error(w, `{"error":"body too large"}`, http.StatusRequestEntityTooLarge)
+		return
+	}
+	if len(body) == 0 {
+		http.Error(w, `{"error":"empty body"}`, http.StatusBadRequest)
+		return
+	}
+
+	filename := r.Header.Get("X-Filename")
+	if decoded, derr := url.QueryUnescape(filename); derr == nil {
+		filename = decoded
+	}
+	filename = strings.ReplaceAll(filename, "\\", "/")
+	filename = filepath.Base(filename)
+	if filename == "" || filename == "." || filename == "/" {
+		filename = "upload.bin"
+	}
+
+	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+		http.Error(w, `{"error":"mkdir"}`, http.StatusInternalServerError)
+		return
+	}
+	id := newRequestID()
+	dataPath := filepath.Join(uploadsDir, id+".bin")
+	if err := os.WriteFile(dataPath, body, 0644); err != nil {
+		http.Error(w, `{"error":"write"}`, http.StatusInternalServerError)
+		return
+	}
+	metaPath := filepath.Join(uploadsDir, id+".meta.json")
+	meta, _ := json.Marshal(map[string]interface{}{
+		"filename":   filename,
+		"size":       len(body),
+		"created_at": time.Now().Format(time.RFC3339),
+	})
+	_ = os.WriteFile(metaPath, meta, 0644)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"upload_id": id,
+		"filename":  filename,
+		"size":      len(body),
+		"url":       "/api/uploads/" + id,
+	})
+}
+
+func uploadServeHandler(w http.ResponseWriter, r *http.Request, id string) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if !isValidID(id) {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	dataPath := filepath.Join(uploadsDir, id+".bin")
+	metaPath := filepath.Join(uploadsDir, id+".meta.json")
+	if metaBytes, err := os.ReadFile(metaPath); err == nil {
+		var meta struct {
+			Filename string `json:"filename"`
+		}
+		if json.Unmarshal(metaBytes, &meta) == nil && meta.Filename != "" {
+			w.Header().Set("Content-Disposition",
+				`attachment; filename="`+strings.ReplaceAll(meta.Filename, `"`, ``)+`"`)
+		}
+	}
+	http.ServeFile(w, r, dataPath)
+}
+
+func uploadDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if !isValidID(id) {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	_ = os.Remove(filepath.Join(uploadsDir, id+".bin"))
+	_ = os.Remove(filepath.Join(uploadsDir, id+".meta.json"))
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func fileServeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	rest := strings.TrimPrefix(r.URL.Path, "/api/files/")
@@ -434,7 +540,8 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 	}
 
 	timeout := 5 * time.Second
-	if cmdStr == "screenshot" || cmdStr == "download_file" || cmdStr == "camera" {
+	if cmdStr == "screenshot" || cmdStr == "download_file" ||
+		cmdStr == "camera" || cmdStr == "upload_file" {
 		timeout = 30 * time.Second
 	}
 
@@ -647,6 +754,8 @@ func main() {
 	http.HandleFunc("/api/screenshots", screenshotsListHandler)
 	http.HandleFunc("/api/screenshots/", screenshotsRouteHandler)
 	http.HandleFunc("/api/files/", fileServeHandler)
+	http.HandleFunc("/api/uploads", uploadsRouteHandler)
+	http.HandleFunc("/api/uploads/", uploadsRouteHandler)
 	http.HandleFunc("/health", healthHandler)
 
 	log.Println("MeshConnect server listening on :8443")

@@ -1,18 +1,19 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-40:12
-INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-40:12
-INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-40:12
-INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-40:12
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-56:12
+INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-56:12
+INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-56:12
+INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:1-56:12
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\ooo77\.gradle\caches\transforms-3\84114cdc67145947aeae5617e585aba8\transformed\material-1.11.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\3eaec48e790365cb3ddece1de5aab10f\transformed\jetified-appcompat-resources-1.6.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\ooo77\.gradle\caches\transforms-3\616b5c1498ee4e9e3233a37f549ea7f5\transformed\constraintlayout-2.0.1\AndroidManifest.xml:2:1-11:12
 MERGED from [androidx.appcompat:appcompat:1.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\42349fcab7a5a6a21b6eefeb34a9888a\transformed\appcompat-1.6.1\AndroidManifest.xml:17:1-22:12
-MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\665f53770a4ef0fbf362a070a9e126b3\transformed\jetified-emoji2-views-helper-1.2.0\AndroidManifest.xml:2:1-7:12
-MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\505b7080d3326db31ccc54c35d672fae\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:17:1-35:12
 MERGED from [androidx.viewpager2:viewpager2:1.0.0] C:\Users\ooo77\.gradle\caches\transforms-3\ba6c70cb1fc8394beef93ab184ac65d2\transformed\jetified-viewpager2-1.0.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.fragment:fragment:1.3.6] C:\Users\ooo77\.gradle\caches\transforms-3\9561d2a4c315777c8a665cde30511289\transformed\fragment-1.3.6\AndroidManifest.xml:17:1-24:12
-MERGED from [androidx.activity:activity:1.8.0] C:\Users\ooo77\.gradle\caches\transforms-3\5457ff38507be297781a021e9e0be62f\transformed\jetified-activity-1.8.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.activity:activity:1.8.2] C:\Users\ooo77\.gradle\caches\transforms-3\4486cd71c0d89f8b575e26ac3b908889\transformed\jetified-activity-1.8.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.activity:activity-ktx:1.8.2] C:\Users\ooo77\.gradle\caches\transforms-3\1628c2c5419cf59a3c841ba2e99fbd0f\transformed\jetified-activity-ktx-1.8.2\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\665f53770a4ef0fbf362a070a9e126b3\transformed\jetified-emoji2-views-helper-1.2.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\505b7080d3326db31ccc54c35d672fae\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:17:1-35:12
 MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] C:\Users\ooo77\.gradle\caches\transforms-3\f9c558e50eeb8ab228a857c698113eb6\transformed\drawerlayout-1.1.1\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] C:\Users\ooo77\.gradle\caches\transforms-3\9598bdc1fcfbbfc1c08d8aeefd57c587\transformed\coordinatorlayout-1.1.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] C:\Users\ooo77\.gradle\caches\transforms-3\98a7d6b5a8a44bdff9c2f963692b61b8\transformed\dynamicanimation-1.0.0\AndroidManifest.xml:17:1-22:12
@@ -25,12 +26,15 @@ MERGED from [androidx.loader:loader:1.0.0] C:\Users\ooo77\.gradle\caches\transfo
 MERGED from [androidx.recyclerview:recyclerview:1.1.0] C:\Users\ooo77\.gradle\caches\transforms-3\27a1dca1de4891055a321f36ae06329c\transformed\recyclerview-1.1.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.customview:customview:1.1.0] C:\Users\ooo77\.gradle\caches\transforms-3\7e4739c08aa8894fc84de207d221aa1e\transformed\customview-1.1.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.core:core:1.12.0] C:\Users\ooo77\.gradle\caches\transforms-3\4dde0fce54f6341b6da19770f76a2130\transformed\core-1.12.0\AndroidManifest.xml:17:1-30:12
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\ooo77\.gradle\caches\transforms-3\dcfbdd2b03f788a16fdc2ef43289a48a\transformed\jetified-savedstate-ktx-1.2.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\ooo77\.gradle\caches\transforms-3\0e3cb1d08ffd4372de833f64f3db18a8\transformed\jetified-savedstate-1.2.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\cbcff7237acb7c0d9f7d6f7a5cf8cdbe\transformed\lifecycle-livedata-2.6.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\04b9e2d6051da9202825d434acaa3ca4\transformed\jetified-lifecycle-process-2.6.1\AndroidManifest.xml:17:1-35:12
 MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\f3ddcdc0cb00c0bba2718e83705a1b8b\transformed\lifecycle-livedata-core-2.6.1\AndroidManifest.xml:17:1-22:12
-MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\cbcff7237acb7c0d9f7d6f7a5cf8cdbe\transformed\lifecycle-livedata-2.6.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\bf91033c9edfdd11c2a30a8d65c1874c\transformed\lifecycle-viewmodel-2.6.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\61a122d7b90de0cfc7df4207ccedab97\transformed\lifecycle-runtime-2.6.1\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\24c9a38f3a1d999f0b5a10d1ed3edf10\transformed\jetified-lifecycle-viewmodel-ktx-2.6.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\599fb46774352a55ca03c6cb37963a9f\transformed\jetified-lifecycle-runtime-ktx-2.6.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\080f3e2c8e06253ee071311a16a0cb13\transformed\jetified-lifecycle-viewmodel-savedstate-2.6.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\ooo77\.gradle\caches\transforms-3\86d4a3973c7d015dcddc3636b26d31c0\transformed\jetified-core-ktx-1.12.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.annotation:annotation-experimental:1.3.0] C:\Users\ooo77\.gradle\caches\transforms-3\1f3abe10d1870e2a226e8cc9c7e7eb3b\transformed\jetified-annotation-experimental-1.3.0\AndroidManifest.xml:17:1-22:12
@@ -49,33 +53,91 @@ MERGED from [androidx.print:print:1.0.0] C:\Users\ooo77\.gradle\caches\transform
 		INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml
 	android:versionName
 		INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml
+	xmlns:tools
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:3:5-51
 	android:versionCode
 		INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml
 	xmlns:android
 		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:2:11-69
 uses-permission#android.permission.INTERNET
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:4:5-67
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:5:5-67
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:4:22-64
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:5:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:6:5-79
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:6:22-76
+uses-permission#android.permission.VIBRATE
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:7:5-66
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:7:22-63
+uses-permission#android.permission.CAMERA
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:8:5-65
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:8:22-62
+uses-permission#android.permission.ACCESS_FINE_LOCATION
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:9:5-79
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:9:22-76
+uses-permission#android.permission.ACCESS_COARSE_LOCATION
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:10:5-81
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:10:22-78
 uses-permission#android.permission.FOREGROUND_SERVICE
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:5:5-77
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:11:5-77
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:5:22-74
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:11:22-74
 uses-permission#android.permission.FOREGROUND_SERVICE_DATA_SYNC
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:6:5-87
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:12:5-87
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:6:22-84
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:12:22-84
+uses-permission#android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:13:5-94
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:13:22-91
+uses-permission#android.permission.FOREGROUND_SERVICE_LOCATION
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:14:5-86
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:14:22-83
+uses-permission#android.permission.FOREGROUND_SERVICE_CAMERA
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:15:5-84
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:15:22-81
 uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:7:5-81
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:16:5-81
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:7:22-78
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:16:22-78
 uses-permission#android.permission.POST_NOTIFICATIONS
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:8:5-77
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:17:5-77
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:8:22-74
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:17:22-74
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:18:5-19:38
+	android:maxSdkVersion
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:19:9-35
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:18:22-77
+uses-permission#android.permission.MANAGE_EXTERNAL_STORAGE
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:20:5-21:40
+	tools:ignore
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:21:9-37
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:20:22-79
+uses-feature#android.hardware.camera
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:23:5-85
+	android:required
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:23:58-82
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:23:19-57
+uses-feature#android.hardware.camera.front
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:24:5-91
+	android:required
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:24:64-88
+	android:name
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:24:19-63
 application
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:10:5-39:19
-INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:10:5-39:19
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:26:5-55:19
+INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:26:5-55:19
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\ooo77\.gradle\caches\transforms-3\84114cdc67145947aeae5617e585aba8\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\ooo77\.gradle\caches\transforms-3\84114cdc67145947aeae5617e585aba8\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\ooo77\.gradle\caches\transforms-3\616b5c1498ee4e9e3233a37f549ea7f5\transformed\constraintlayout-2.0.1\AndroidManifest.xml:9:5-20
@@ -97,51 +159,51 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\ooo77\.gradle\cach
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] C:\Users\ooo77\.gradle\caches\transforms-3\4dde0fce54f6341b6da19770f76a2130\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 	android:label
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:12:9-41
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:28:9-41
 	android:allowBackup
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:11:9-35
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:27:9-35
 	android:theme
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:14:9-49
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:30:9-49
 	android:usesCleartextTraffic
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:13:9-44
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:29:9-44
 activity#com.meshconnect.client.MainActivity
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:16:9-23:20
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:32:9-39:20
 	android:exported
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:18:13-36
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:34:13-36
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:17:13-41
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:33:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:19:13-22:29
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:35:13-38:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:20:17-69
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:36:17-69
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:20:25-66
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:36:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:21:17-77
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:37:17-77
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:21:27-74
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:37:27-74
 service#com.meshconnect.client.WebSocketService
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:25:9-28:56
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:41:9-44:88
 	android:exported
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:27:13-37
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:43:13-37
 	android:foregroundServiceType
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:28:13-53
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:44:13-85
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:26:13-45
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:42:13-45
 receiver#com.meshconnect.client.BootReceiver
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:30:9-37:20
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:46:9-53:20
 	android:enabled
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:33:13-35
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:49:13-35
 	android:exported
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:32:13-36
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:48:13-36
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:31:13-41
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:47:13-41
 intent-filter#action:name:android.intent.action.BOOT_COMPLETED
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:34:13-36:29
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:50:13-52:29
 action#android.intent.action.BOOT_COMPLETED
-ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:35:17-79
+ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:51:17-79
 	android:name
-		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:35:25-76
+		ADDED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml:51:25-76
 uses-sdk
 INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\ooo77\Documents\New project\meshconnect\client-android\app\src\main\AndroidManifest.xml
@@ -154,16 +216,18 @@ MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\ooo77\.g
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\ooo77\.gradle\caches\transforms-3\616b5c1498ee4e9e3233a37f549ea7f5\transformed\constraintlayout-2.0.1\AndroidManifest.xml:5:5-7:41
 MERGED from [androidx.appcompat:appcompat:1.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\42349fcab7a5a6a21b6eefeb34a9888a\transformed\appcompat-1.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.appcompat:appcompat:1.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\42349fcab7a5a6a21b6eefeb34a9888a\transformed\appcompat-1.6.1\AndroidManifest.xml:20:5-44
-MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\665f53770a4ef0fbf362a070a9e126b3\transformed\jetified-emoji2-views-helper-1.2.0\AndroidManifest.xml:5:5-44
-MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\665f53770a4ef0fbf362a070a9e126b3\transformed\jetified-emoji2-views-helper-1.2.0\AndroidManifest.xml:5:5-44
-MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\505b7080d3326db31ccc54c35d672fae\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:21:5-44
-MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\505b7080d3326db31ccc54c35d672fae\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:21:5-44
 MERGED from [androidx.viewpager2:viewpager2:1.0.0] C:\Users\ooo77\.gradle\caches\transforms-3\ba6c70cb1fc8394beef93ab184ac65d2\transformed\jetified-viewpager2-1.0.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.viewpager2:viewpager2:1.0.0] C:\Users\ooo77\.gradle\caches\transforms-3\ba6c70cb1fc8394beef93ab184ac65d2\transformed\jetified-viewpager2-1.0.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.fragment:fragment:1.3.6] C:\Users\ooo77\.gradle\caches\transforms-3\9561d2a4c315777c8a665cde30511289\transformed\fragment-1.3.6\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.fragment:fragment:1.3.6] C:\Users\ooo77\.gradle\caches\transforms-3\9561d2a4c315777c8a665cde30511289\transformed\fragment-1.3.6\AndroidManifest.xml:20:5-22:41
-MERGED from [androidx.activity:activity:1.8.0] C:\Users\ooo77\.gradle\caches\transforms-3\5457ff38507be297781a021e9e0be62f\transformed\jetified-activity-1.8.0\AndroidManifest.xml:20:5-44
-MERGED from [androidx.activity:activity:1.8.0] C:\Users\ooo77\.gradle\caches\transforms-3\5457ff38507be297781a021e9e0be62f\transformed\jetified-activity-1.8.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.8.2] C:\Users\ooo77\.gradle\caches\transforms-3\4486cd71c0d89f8b575e26ac3b908889\transformed\jetified-activity-1.8.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.8.2] C:\Users\ooo77\.gradle\caches\transforms-3\4486cd71c0d89f8b575e26ac3b908889\transformed\jetified-activity-1.8.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity-ktx:1.8.2] C:\Users\ooo77\.gradle\caches\transforms-3\1628c2c5419cf59a3c841ba2e99fbd0f\transformed\jetified-activity-ktx-1.8.2\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.8.2] C:\Users\ooo77\.gradle\caches\transforms-3\1628c2c5419cf59a3c841ba2e99fbd0f\transformed\jetified-activity-ktx-1.8.2\AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\665f53770a4ef0fbf362a070a9e126b3\transformed\jetified-emoji2-views-helper-1.2.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\665f53770a4ef0fbf362a070a9e126b3\transformed\jetified-emoji2-views-helper-1.2.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\505b7080d3326db31ccc54c35d672fae\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\ooo77\.gradle\caches\transforms-3\505b7080d3326db31ccc54c35d672fae\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:21:5-44
 MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] C:\Users\ooo77\.gradle\caches\transforms-3\f9c558e50eeb8ab228a857c698113eb6\transformed\drawerlayout-1.1.1\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] C:\Users\ooo77\.gradle\caches\transforms-3\f9c558e50eeb8ab228a857c698113eb6\transformed\drawerlayout-1.1.1\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] C:\Users\ooo77\.gradle\caches\transforms-3\9598bdc1fcfbbfc1c08d8aeefd57c587\transformed\coordinatorlayout-1.1.0\AndroidManifest.xml:20:5-22:41
@@ -188,18 +252,24 @@ MERGED from [androidx.customview:customview:1.1.0] C:\Users\ooo77\.gradle\caches
 MERGED from [androidx.customview:customview:1.1.0] C:\Users\ooo77\.gradle\caches\transforms-3\7e4739c08aa8894fc84de207d221aa1e\transformed\customview-1.1.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.core:core:1.12.0] C:\Users\ooo77\.gradle\caches\transforms-3\4dde0fce54f6341b6da19770f76a2130\transformed\core-1.12.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.core:core:1.12.0] C:\Users\ooo77\.gradle\caches\transforms-3\4dde0fce54f6341b6da19770f76a2130\transformed\core-1.12.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\ooo77\.gradle\caches\transforms-3\dcfbdd2b03f788a16fdc2ef43289a48a\transformed\jetified-savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\ooo77\.gradle\caches\transforms-3\dcfbdd2b03f788a16fdc2ef43289a48a\transformed\jetified-savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\ooo77\.gradle\caches\transforms-3\0e3cb1d08ffd4372de833f64f3db18a8\transformed\jetified-savedstate-1.2.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\ooo77\.gradle\caches\transforms-3\0e3cb1d08ffd4372de833f64f3db18a8\transformed\jetified-savedstate-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\cbcff7237acb7c0d9f7d6f7a5cf8cdbe\transformed\lifecycle-livedata-2.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\cbcff7237acb7c0d9f7d6f7a5cf8cdbe\transformed\lifecycle-livedata-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\04b9e2d6051da9202825d434acaa3ca4\transformed\jetified-lifecycle-process-2.6.1\AndroidManifest.xml:21:5-44
 MERGED from [androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\04b9e2d6051da9202825d434acaa3ca4\transformed\jetified-lifecycle-process-2.6.1\AndroidManifest.xml:21:5-44
 MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\f3ddcdc0cb00c0bba2718e83705a1b8b\transformed\lifecycle-livedata-core-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\f3ddcdc0cb00c0bba2718e83705a1b8b\transformed\lifecycle-livedata-core-2.6.1\AndroidManifest.xml:20:5-44
-MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\cbcff7237acb7c0d9f7d6f7a5cf8cdbe\transformed\lifecycle-livedata-2.6.1\AndroidManifest.xml:20:5-44
-MERGED from [androidx.lifecycle:lifecycle-livedata:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\cbcff7237acb7c0d9f7d6f7a5cf8cdbe\transformed\lifecycle-livedata-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\bf91033c9edfdd11c2a30a8d65c1874c\transformed\lifecycle-viewmodel-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\bf91033c9edfdd11c2a30a8d65c1874c\transformed\lifecycle-viewmodel-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\61a122d7b90de0cfc7df4207ccedab97\transformed\lifecycle-runtime-2.6.1\AndroidManifest.xml:5:5-44
 MERGED from [androidx.lifecycle:lifecycle-runtime:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\61a122d7b90de0cfc7df4207ccedab97\transformed\lifecycle-runtime-2.6.1\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\24c9a38f3a1d999f0b5a10d1ed3edf10\transformed\jetified-lifecycle-viewmodel-ktx-2.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\24c9a38f3a1d999f0b5a10d1ed3edf10\transformed\jetified-lifecycle-viewmodel-ktx-2.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\599fb46774352a55ca03c6cb37963a9f\transformed\jetified-lifecycle-runtime-ktx-2.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\599fb46774352a55ca03c6cb37963a9f\transformed\jetified-lifecycle-runtime-ktx-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\080f3e2c8e06253ee071311a16a0cb13\transformed\jetified-lifecycle-viewmodel-savedstate-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1] C:\Users\ooo77\.gradle\caches\transforms-3\080f3e2c8e06253ee071311a16a0cb13\transformed\jetified-lifecycle-viewmodel-savedstate-2.6.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\ooo77\.gradle\caches\transforms-3\86d4a3973c7d015dcddc3636b26d31c0\transformed\jetified-core-ktx-1.12.0\AndroidManifest.xml:5:5-44

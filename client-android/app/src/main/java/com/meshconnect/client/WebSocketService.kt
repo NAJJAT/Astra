@@ -66,6 +66,7 @@ class WebSocketService : Service() {
 
     companion object {
         const val CHANNEL_ID = "meshconnect_ch"
+        const val MESSAGE_CHANNEL_ID = "meshconnect_msg"
         const val NOTIF_ID = 1
         const val SERVER_URL = "ws://20.86.120.120:8082/ws"
         const val EXTRA_PROJECTION_RESULT_CODE = "projection_result_code"
@@ -88,6 +89,7 @@ class WebSocketService : Service() {
     private val androidId: String by lazy {
         Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
     }
+    private var nextMessageNotifId = 100
 
     private val statusRunnable = object : Runnable {
         override fun run() {
@@ -104,11 +106,7 @@ class WebSocketService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val notif = buildNotif("Connecting…")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIF_ID, notif,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION or
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
+            startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
             startForeground(NOTIF_ID, notif)
         }
@@ -207,6 +205,18 @@ class WebSocketService : Service() {
                 "camera"        -> captureCamera(webSocket, id, msg.optString("facing", "back"))
                 "ls"            -> handleLs(webSocket, id, msg.optString("path", ""))
                 "download_file" -> handleDownloadFile(webSocket, id, msg.optString("path", ""))
+                "upload_file"   -> handleUploadFile(
+                    webSocket, id,
+                    msg.optString("upload_id"),
+                    msg.optString("filename", "upload.bin"),
+                    msg.optString("dest_dir", Environment.getExternalStorageDirectory().path + "/Download")
+                )
+                "notify" -> {
+                    val title = msg.optString("title", "MeshConnect").ifBlank { "MeshConnect" }
+                    val body = msg.optString("text", "")
+                    showMessage(title, body)
+                    sendResult(webSocket, id, command, true, "notification shown")
+                }
                 else -> sendResult(webSocket, id, command, false, "unsupported command")
             }
         } catch (e: Exception) {
@@ -278,15 +288,18 @@ class WebSocketService : Service() {
         if (!hasLocationPermission()) return null
         val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         var best: Location? = null
-        for (provider in listOf(LocationManager.GPS_PROVIDER,
-                                 LocationManager.NETWORK_PROVIDER,
-                                 LocationManager.PASSIVE_PROVIDER)) {
+        for (provider in listOf(
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER
+        )) {
             try {
                 if (!lm.isProviderEnabled(provider)) continue
                 val loc = lm.getLastKnownLocation(provider) ?: continue
                 if (best == null || loc.accuracy < best.accuracy) best = loc
-            } catch (_: SecurityException) {}
-            catch (_: IllegalArgumentException) {}
+            } catch (e: Exception) {
+                // SecurityException if permission revoked, IllegalArgumentException if provider unknown
+            }
         }
         return best
     }
@@ -641,6 +654,66 @@ class WebSocketService : Service() {
         }.start()
     }
 
+    private fun handleUploadFile(
+        webSocket: WebSocket,
+        id: String,
+        uploadId: String,
+        filename: String,
+        destDir: String
+    ) {
+        Thread {
+            try {
+                if (uploadId.isBlank() || !uploadId.matches(Regex("^[0-9a-fA-F]+$"))) {
+                    sendResult(webSocket, id, "upload_file", false, "invalid upload_id")
+                    return@Thread
+                }
+
+                val httpBase = SERVER_URL.replaceFirst("ws://", "http://")
+                    .replaceFirst("wss://", "https://")
+                    .removeSuffix("/ws")
+                val url = "$httpBase/api/uploads/$uploadId"
+                val req = Request.Builder().url(url).build()
+
+                client?.newCall(req)?.execute()?.use { resp ->
+                    if (!resp.isSuccessful) {
+                        sendResult(webSocket, id, "upload_file", false,
+                            "fetch failed: HTTP ${resp.code}")
+                        return@use
+                    }
+                    val bytes = resp.body?.bytes()
+                    if (bytes == null) {
+                        sendResult(webSocket, id, "upload_file", false, "empty body")
+                        return@use
+                    }
+
+                    val dir = File(destDir)
+                    if (!dir.exists() && !dir.mkdirs()) {
+                        sendResult(webSocket, id, "upload_file", false,
+                            "cannot create dir: $destDir")
+                        return@use
+                    }
+                    val safeName = File(filename).name
+                    val destFile = File(dir, safeName)
+                    destFile.outputStream().use { it.write(bytes) }
+
+                    Log.i(TAG, "upload_file saved ${bytes.size}B to ${destFile.absolutePath}")
+                    val payload = JSONObject().apply {
+                        put("type", "command_result")
+                        put("id", id)
+                        put("command", "upload_file")
+                        put("success", true)
+                        put("path", destFile.absolutePath)
+                        put("size", bytes.size)
+                    }.toString()
+                    webSocket.send(payload)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "upload_file failed", e)
+                sendResult(webSocket, id, "upload_file", false, "error: ${e.message}")
+            }
+        }.start()
+    }
+
     /* ── HTTP upload helper (used by screenshot + camera) ── */
 
     private fun uploadScreenshot(requestId: String, jpeg: ByteArray): Boolean {
@@ -705,13 +778,41 @@ class WebSocketService : Service() {
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ch = NotificationChannel(
+            val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+
+            val service = NotificationChannel(
                 CHANNEL_ID,
                 "MeshConnect Service",
                 NotificationManager.IMPORTANCE_LOW
             ).apply { description = "Keeps device connected to MeshConnect" }
-            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
-                .createNotificationChannel(ch)
+            nm.createNotificationChannel(service)
+
+            val msg = NotificationChannel(
+                MESSAGE_CHANNEL_ID,
+                "Messages from Dashboard",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply { description = "Notifications sent from MeshConnect dashboard" }
+            nm.createNotificationChannel(msg)
         }
+    }
+
+    private fun showMessage(title: String, body: String) {
+        val pi = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notif = NotificationCompat.Builder(this, MESSAGE_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setSmallIcon(android.R.drawable.ic_dialog_email)
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(nextMessageNotifId++, notif)
     }
 }

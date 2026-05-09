@@ -1,5 +1,6 @@
 package com.meshconnect.client
 
+import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
@@ -83,7 +84,7 @@ class MainActivity : AppCompatActivity() {
                 // Fall through and start anyway — file browser just won't work
             }
         }
-        val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         projectionLauncher.launch(mpm.createScreenCaptureIntent())
     }
 }
