@@ -113,12 +113,12 @@
 
         .content {
             padding: 28px;
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
         /* Stats */
-        .stats { display: flex; gap: 16px; margin-bottom: 28px; }
+        .stats { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
         .stat {
             background: #1e293b;
             border: 1px solid #1e3a5f;
@@ -146,17 +146,20 @@
             background: #1e293b;
             border: 1px solid #334155;
             border-radius: 7px;
-            color: #64748b;
+            color: #94a3b8;
             font-size: 13px;
             cursor: pointer;
+            transition: background 0.2s;
         }
-        .btn-refresh:hover { background: #334155; color: #94a3b8; }
+        .btn-refresh:hover { background: #334155; color: #e2e8f0; }
+        .btn-refresh.spin { animation: spin 0.6s ease; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         /* Device grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+            gap: 16px;
         }
 
         .card {
@@ -169,13 +172,13 @@
         }
         .card:hover { transform: translateY(-1px); }
         .card.online  { border-left-color: #34d399; }
-        .card.offline { border-left-color: #f87171; }
+        .card.offline { border-left-color: #f87171; opacity: 0.85; }
 
         .card-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
         .card-icon { font-size: 28px; line-height: 1; }
 
@@ -199,14 +202,182 @@
         .dot.pulse { animation: pulse 2s infinite; }
         @keyframes pulse {
             0%,100% { opacity: 1; }
-            50%      { opacity: .35; }
+            50%     { opacity: .35; }
         }
 
-        .card-name  { font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 3px; }
-        .card-model { font-size: 13px; color: #475569; margin-bottom: 12px; }
-        .card-meta  { display: flex; flex-direction: column; gap: 3px; }
-        .meta-row   { font-size: 12px; color: #475569; }
-        .meta-row span { color: #64748b; }
+        .card-name  { font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 2px; }
+        .card-model { font-size: 12px; color: #64748b; margin-bottom: 14px; }
+
+        /* Metrics with progress bars */
+        .metrics { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        .metric-label { color: #94a3b8; display: flex; align-items: center; gap: 5px; }
+        .metric-value { color: #cbd5e1; font-weight: 600; font-variant-numeric: tabular-nums; }
+        .bar {
+            height: 6px;
+            background: #0f172a;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s ease, background 0.2s;
+        }
+        .bar-fill.battery   { background: linear-gradient(90deg, #34d399, #10b981); }
+        .bar-fill.battery.low  { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+        .bar-fill.battery.crit { background: linear-gradient(90deg, #f87171, #ef4444); }
+        .bar-fill.ram       { background: linear-gradient(90deg, #60a5fa, #3b82f6); }
+        .bar-fill.storage   { background: linear-gradient(90deg, #a78bfa, #8b5cf6); }
+
+        .footer-row {
+            display: flex;
+            gap: 14px;
+            font-size: 11px;
+            color: #64748b;
+            padding-top: 10px;
+            border-top: 1px solid #0f172a;
+            flex-wrap: wrap;
+        }
+        .footer-row .item { display: inline-flex; align-items: center; gap: 4px; }
+
+        .no-status {
+            font-size: 12px;
+            color: #475569;
+            font-style: italic;
+            padding: 14px 0;
+            text-align: center;
+        }
+
+        /* Command buttons */
+        .actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #0f172a;
+        }
+        .btn-cmd {
+            flex: 1;
+            padding: 7px 10px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-cmd:hover:not(:disabled) {
+            background: #1e3a5f;
+            border-color: #3b82f6;
+            color: #e2e8f0;
+        }
+        .btn-cmd:active:not(:disabled) { transform: scale(0.97); }
+        .btn-cmd:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .btn-cmd.busy {
+            background: #1e3a5f;
+            border-color: #3b82f6;
+        }
+
+        /* Screenshot modal */
+        .modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 24px;
+            cursor: zoom-out;
+        }
+        .modal-bg.show { display: flex; }
+        .modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            cursor: default;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        .modal-close {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .modal-close:hover { background: #334155; }
+        .modal-img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+        }
+        .modal-actions { display: flex; gap: 8px; }
+        .modal-actions a {
+            background: #3b82f6;
+            color: #fff;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .modal-actions a:hover { background: #2563eb; }
+
+        /* Toast */
+        .toasts {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .toast {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-left: 3px solid #3b82f6;
+            border-radius: 8px;
+            padding: 11px 16px;
+            color: #e2e8f0;
+            font-size: 13px;
+            min-width: 240px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: toastIn 0.2s ease;
+            pointer-events: auto;
+        }
+        .toast.success { border-left-color: #34d399; }
+        .toast.error   { border-left-color: #f87171; }
+        @keyframes toastIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
 
         /* Empty state */
         .empty {
@@ -271,7 +442,7 @@
                 <span class="section-title">Devices</span>
                 <span class="section-sub" id="device-count"></span>
             </div>
-            <button class="btn-refresh" onclick="fetchDevices()">↻ Refresh</button>
+            <button class="btn-refresh" id="btn-refresh" onclick="manualRefresh()">↻ Refresh</button>
         </div>
 
         <div class="grid" id="grid">
@@ -280,6 +451,22 @@
                 <h3>No devices connected</h3>
                 <p>Install the Android app and tap "Start Service"</p>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<div class="modal-bg" id="modal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span id="modal-title">Screenshot</span>
+            <button class="modal-close" onclick="closeModal()">✕ Close</button>
+        </div>
+        <img class="modal-img" id="modal-img" alt="Screenshot">
+        <div class="modal-actions">
+            <a id="modal-open" target="_blank" rel="noopener">Open in new tab</a>
+            <a id="modal-download" download>Download</a>
         </div>
     </div>
 </div>
@@ -323,6 +510,87 @@
         timer = setInterval(fetchDevices, 5000);
     }
 
+    document.getElementById('grid').addEventListener('click', e => {
+        const btn = e.target.closest('.btn-cmd');
+        if (!btn || btn.disabled) return;
+        runCommand(btn);
+    });
+
+    async function runCommand(btn) {
+        const id   = btn.dataset.id;
+        const cmd  = btn.dataset.cmd;
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.classList.add('busy');
+        btn.innerHTML = '…';
+        try {
+            const r = await fetch(`/api/devices/${encodeURIComponent(id)}/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: cmd })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                toast(`${cmd} failed: ${err.error || r.status}`, 'error');
+                return;
+            }
+            const data = await r.json();
+            if (cmd === 'ping') {
+                toast(`Ping: ${data.latency_ms} ms`, 'success');
+            } else if (cmd === 'get_info') {
+                toast(`Info refreshed (${data.latency_ms} ms)`, 'success');
+                setTimeout(fetchDevices, 200);
+            } else if (cmd === 'screenshot') {
+                toast(`Screenshot captured (${data.latency_ms} ms)`, 'success');
+                openScreenshot(data.screenshot_url, btn.dataset.id);
+            } else {
+                toast(`${cmd} ✓ (${data.latency_ms} ms)`, 'success');
+            }
+        } catch (e) {
+            toast(`${cmd} failed: network error`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('busy');
+            btn.innerHTML = orig;
+        }
+    }
+
+    function toast(text, kind = '') {
+        const t = document.createElement('div');
+        t.className = 'toast ' + kind;
+        t.textContent = text;
+        document.getElementById('toasts').appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+    }
+
+    function openScreenshot(url, deviceId) {
+        const cacheBust = `${url}?t=${Date.now()}`;
+        document.getElementById('modal-img').src = cacheBust;
+        document.getElementById('modal-open').href = cacheBust;
+        document.getElementById('modal-download').href = cacheBust;
+        document.getElementById('modal-download').download =
+            `screenshot-${deviceId.slice(0,8)}-${Date.now()}.jpg`;
+        document.getElementById('modal-title').textContent =
+            `Screenshot · ${deviceId.slice(0,12)}…`;
+        document.getElementById('modal').classList.add('show');
+    }
+    function closeModal(e) {
+        if (e && e.target.id !== 'modal' && e.type !== 'click') return;
+        document.getElementById('modal').classList.remove('show');
+        document.getElementById('modal-img').src = '';
+    }
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    function manualRefresh() {
+        const btn = document.getElementById('btn-refresh');
+        btn.classList.remove('spin');
+        void btn.offsetWidth;
+        btn.classList.add('spin');
+        fetchDevices();
+    }
+
     async function fetchDevices() {
         try {
             const r = await fetch(API);
@@ -356,32 +624,120 @@
 
         list.sort((a, b) => b.online - a.online);
 
-        grid.innerHTML = list.map(d => {
-            const cls   = d.online ? 'online' : 'offline';
-            const label = d.online ? 'Online' : 'Offline';
-            const name  = esc(d.name || d.model || 'Unknown Device');
-            const maker = esc(d.manufacturer || '');
-            const model = esc(d.model || '');
-            const os    = esc(d.os_version || '?');
-            const id    = esc((d.id || '?').slice(0, 16));
-            return `
-            <div class="card ${cls}">
-                <div class="card-top">
-                    <div class="card-icon">📱</div>
-                    <div class="badge ${cls}">
-                        <div class="dot ${d.online ? 'pulse' : ''}"></div>
-                        ${label}
-                    </div>
+        grid.innerHTML = list.map(renderCard).join('');
+    }
+
+    function renderCard(d) {
+        const cls   = d.online ? 'online' : 'offline';
+        const label = d.online ? 'Online' : 'Offline';
+        const name  = esc(d.name || d.model || 'Unknown Device');
+        const maker = esc(d.manufacturer || '');
+        const model = esc(d.model || '');
+        const os    = esc(d.os_version || '?');
+        const id    = esc((d.id || '?').slice(0, 12));
+        const s     = d.status || {};
+        const hasStatus = s.ram_total > 0 || s.battery > 0 || s.updated_at;
+
+        const statusBlock = hasStatus ? renderStatus(s) : `
+            <div class="no-status">No status received yet…</div>`;
+
+        return `
+        <div class="card ${cls}">
+            <div class="card-top">
+                <div class="card-icon">📱</div>
+                <div class="badge ${cls}">
+                    <div class="dot ${d.online ? 'pulse' : ''}"></div>
+                    ${label}
                 </div>
-                <div class="card-name">${name}</div>
-                <div class="card-model">${maker} ${model}</div>
-                <div class="card-meta">
-                    <div class="meta-row">Android <span>${os}</span></div>
-                    <div class="meta-row">Last seen <span>${ago(d.last_seen)}</span></div>
-                    <div class="meta-row" style="font-family:monospace;font-size:11px;color:#334155">${id}…</div>
+            </div>
+            <div class="card-name">${name}</div>
+            <div class="card-model">${maker} ${model} · ${id}…</div>
+
+            ${statusBlock}
+
+            <div class="footer-row">
+                <span class="item">${netIcon(s.network)} ${esc(s.network || '?')}</span>
+                <span class="item">🤖 Android ${os}</span>
+                <span class="item">⏱ ${uptime(s.uptime)}</span>
+                <span class="item" style="margin-left:auto">${ago(d.last_seen)}</span>
+            </div>
+
+            <div class="actions">
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="ping"       ${d.online ? '' : 'disabled'}>📡 Ping</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="get_info"   ${d.online ? '' : 'disabled'}>↻ Refresh</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="vibrate"    ${d.online ? '' : 'disabled'}>📳 Vibrate</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="screenshot" ${d.online ? '' : 'disabled'}>📷 Screenshot</button>
+            </div>
+        </div>`;
+    }
+
+    function renderStatus(s) {
+        const battPct = clamp(s.battery, 0, 100);
+        const battCls = battPct < 15 ? 'crit' : battPct < 35 ? 'low' : '';
+        const ramPct  = pct(s.ram_used, s.ram_total);
+        const stoPct  = pct(s.storage_used, s.storage_total);
+
+        return `
+        <div class="metrics">
+            <div>
+                <div class="metric-row">
+                    <span class="metric-label">${battIcon(battPct, s.charging)} Battery</span>
+                    <span class="metric-value">${battPct}%${s.charging ? ' ⚡' : ''}</span>
                 </div>
-            </div>`;
-        }).join('');
+                <div class="bar"><div class="bar-fill battery ${battCls}" style="width:${battPct}%"></div></div>
+            </div>
+
+            <div>
+                <div class="metric-row">
+                    <span class="metric-label">🧠 RAM</span>
+                    <span class="metric-value">${fmtGB(s.ram_used)} / ${fmtGB(s.ram_total)}</span>
+                </div>
+                <div class="bar"><div class="bar-fill ram" style="width:${ramPct}%"></div></div>
+            </div>
+
+            <div>
+                <div class="metric-row">
+                    <span class="metric-label">💾 Storage</span>
+                    <span class="metric-value">${fmtGB(s.storage_used)} / ${fmtGB(s.storage_total)}</span>
+                </div>
+                <div class="bar"><div class="bar-fill storage" style="width:${stoPct}%"></div></div>
+            </div>
+        </div>`;
+    }
+
+    /* helpers */
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, Number(n) || 0));
+    const pct   = (a, b) => b > 0 ? Math.round((a / b) * 100) : 0;
+    const fmtGB = b => {
+        if (!b) return '–';
+        const gb = b / (1024 ** 3);
+        return gb >= 10 ? gb.toFixed(0) + ' GB' : gb.toFixed(1) + ' GB';
+    };
+    function uptime(ms) {
+        if (!ms || ms <= 0) return '–';
+        const s = Math.floor(ms / 1000);
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        if (d) return `${d}d ${h}h`;
+        if (h) return `${h}h ${m}m`;
+        return `${m}m`;
+    }
+    function netIcon(net) {
+        switch (net) {
+            case 'wifi':     return '📶';
+            case 'cellular': return '📡';
+            case 'ethernet': return '🔌';
+            case 'none':     return '⊘';
+            default:         return '🌐';
+        }
+    }
+    function battIcon(pct, charging) {
+        if (charging) return '🔌';
+        if (pct >= 80) return '🔋';
+        if (pct >= 40) return '🔋';
+        if (pct >= 15) return '🪫';
+        return '🪫';
     }
 
     function esc(s) {
@@ -393,7 +749,7 @@
     function ago(ts) {
         if (!ts) return 'Never';
         const sec = Math.floor((Date.now() - new Date(ts)) / 1000);
-        if (sec <  5) return 'Just now';
+        if (sec <  5) return 'just now';
         if (sec < 60) return sec + 's ago';
         if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
         return new Date(ts).toLocaleTimeString();

@@ -1,14 +1,42 @@
 package com.meshconnect.client
 
 import android.content.Intent
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var statusView: TextView
+    private lateinit var startBtn: Button
+
+    private val projectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val svc = Intent(this, WebSocketService::class.java).apply {
+            putExtra(WebSocketService.EXTRA_PROJECTION_RESULT_CODE, result.resultCode)
+            if (result.data != null) {
+                putExtra(WebSocketService.EXTRA_PROJECTION_DATA, result.data)
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(svc)
+        } else {
+            startService(svc)
+        }
+        statusView.text = if (result.resultCode == RESULT_OK)
+            "Service started!\nScreen-capture is enabled.\nDevice will appear Online in dashboard."
+        else
+            "Service started without screenshot.\nOther commands still work."
+        startBtn.isEnabled = false
+        startBtn.text = "Running…"
+        moveTaskToBack(true)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,22 +50,12 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        val btn    = findViewById<Button>(R.id.btn_start)
-        val status = findViewById<TextView>(R.id.tv_status)
+        startBtn   = findViewById(R.id.btn_start)
+        statusView = findViewById(R.id.tv_status)
 
-        btn.setOnClickListener {
-            val svc = Intent(this, WebSocketService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(svc)
-            } else {
-                startService(svc)
-            }
-            status.text = "Service started!\nDevice will appear Online in dashboard."
-            btn.isEnabled = false
-            btn.text = "Running…"
-
-            // Move app to background so service continues as foreground
-            moveTaskToBack(true)
+        startBtn.setOnClickListener {
+            val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            projectionLauncher.launch(mpm.createScreenCaptureIntent())
         }
     }
 }
