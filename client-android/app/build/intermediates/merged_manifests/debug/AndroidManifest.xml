@@ -26,6 +26,7 @@
         android:debuggable="true"
         android:extractNativeLibs="false"
         android:label="@string/app_name"
+        android:testOnly="true"
         android:theme="@style/Theme.MeshConnect"
         android:usesCleartextTraffic="true" >
         <activity

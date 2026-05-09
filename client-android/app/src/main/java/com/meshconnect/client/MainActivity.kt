@@ -47,7 +47,8 @@ class MainActivity : AppCompatActivity() {
 
         val perms = mutableListOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION
+            android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            android.Manifest.permission.CAMERA
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             perms.add(android.Manifest.permission.POST_NOTIFICATIONS)
@@ -79,7 +80,7 @@ class MainActivity : AppCompatActivity() {
                 statusView.text = "Grant ‘All files access’, then come back and tap Start Service again."
                 return
             } catch (_: Exception) {
-                // fall through and start anyway
+                // Fall through and start anyway — file browser just won't work
             }
         }
         val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
