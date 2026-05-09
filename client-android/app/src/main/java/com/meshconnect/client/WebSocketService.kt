@@ -15,7 +15,7 @@ class WebSocketService : Service() {
     companion object {
         const val CHANNEL_ID  = "meshconnect_ch"
         const val NOTIF_ID    = 1
-        const val SERVER_URL  = "ws://20.86.120.120:8081/ws"
+        const val SERVER_URL  = "ws://20.86.120.120:8082/ws"
     }
 
     private var client: OkHttpClient? = null
