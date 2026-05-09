@@ -21,7 +21,9 @@ const (
 	dataDir         = "/root/data"
 	devicesFile     = "/root/data/devices.json"
 	screenshotsDir  = "/root/data/screenshots"
-	maxScreenshotKB = 10 * 1024 // 10 MB
+	filesDir        = "/root/data/files"
+	maxScreenshotKB = 10 * 1024  // 10 MB
+	maxFileKB       = 100 * 1024 // 100 MB
 )
 
 type DeviceInfo struct {
@@ -33,15 +35,19 @@ type DeviceInfo struct {
 }
 
 type DeviceStatus struct {
-	Battery      int       `json:"battery"`
-	Charging     bool      `json:"charging"`
-	RAMUsed      int64     `json:"ram_used"`
-	RAMTotal     int64     `json:"ram_total"`
-	StorageUsed  int64     `json:"storage_used"`
-	StorageTotal int64     `json:"storage_total"`
-	Network      string    `json:"network"`
-	Uptime       int64     `json:"uptime"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	Battery          int       `json:"battery"`
+	Charging         bool      `json:"charging"`
+	RAMUsed          int64     `json:"ram_used"`
+	RAMTotal         int64     `json:"ram_total"`
+	StorageUsed      int64     `json:"storage_used"`
+	StorageTotal     int64     `json:"storage_total"`
+	Network          string    `json:"network"`
+	Uptime           int64     `json:"uptime"`
+	Latitude         float64   `json:"latitude,omitempty"`
+	Longitude        float64   `json:"longitude,omitempty"`
+	LocationAccuracy float64   `json:"location_accuracy,omitempty"`
+	LocationTime     int64     `json:"location_time,omitempty"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type Device struct {
@@ -239,10 +245,12 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 var allowedCommands = map[string]bool{
-	"ping":       true,
-	"get_info":   true,
-	"vibrate":    true,
-	"screenshot": true,
+	"ping":          true,
+	"get_info":      true,
+	"vibrate":       true,
+	"screenshot":    true,
+	"ls":            true,
+	"download_file": true,
 }
 
 func isValidID(s string) bool {
@@ -275,9 +283,98 @@ func devicesPathHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		screenshotUploadHandler(w, r, deviceID, parts[2])
+	case "files":
+		if len(parts) < 3 || parts[2] == "" {
+			http.Error(w, `{"error":"file id required"}`, http.StatusBadRequest)
+			return
+		}
+		fileUploadHandler(w, r, deviceID, parts[2])
 	default:
 		http.Error(w, `{"error":"unknown action"}`, http.StatusNotFound)
 	}
+}
+
+func fileUploadHandler(w http.ResponseWriter, r *http.Request, deviceID, reqID string) {
+	if r.Method != http.MethodPost && r.Method != http.MethodPut {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+	if !isValidID(reqID) {
+		http.Error(w, `{"error":"bad id"}`, http.StatusBadRequest)
+		return
+	}
+	mu.RLock()
+	_, ok := devices[deviceID]
+	mu.RUnlock()
+	if !ok {
+		http.Error(w, `{"error":"device not found"}`, http.StatusNotFound)
+		return
+	}
+
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxFileKB*1024))
+	if err != nil {
+		http.Error(w, `{"error":"body too large"}`, http.StatusRequestEntityTooLarge)
+		return
+	}
+	dir := filepath.Join(filesDir, deviceID)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		http.Error(w, `{"error":"mkdir"}`, http.StatusInternalServerError)
+		return
+	}
+	filename := r.Header.Get("X-Filename")
+	if filename == "" {
+		filename = reqID + ".bin"
+	}
+	filename = filepath.Base(filename)
+
+	dataPath := filepath.Join(dir, reqID+".bin")
+	if err := os.WriteFile(dataPath, body, 0644); err != nil {
+		http.Error(w, `{"error":"write"}`, http.StatusInternalServerError)
+		return
+	}
+	metaPath := filepath.Join(dir, reqID+".meta.json")
+	meta, _ := json.Marshal(map[string]interface{}{
+		"filename":    filename,
+		"size":        len(body),
+		"uploaded_at": time.Now().Format(time.RFC3339),
+	})
+	_ = os.WriteFile(metaPath, meta, 0644)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"ok":       true,
+		"size":     len(body),
+		"filename": filename,
+	})
+}
+
+func fileServeHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	rest := strings.TrimPrefix(r.URL.Path, "/api/files/")
+	parts := strings.SplitN(rest, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		http.Error(w, "bad path", http.StatusBadRequest)
+		return
+	}
+	deviceID, reqID := parts[0], parts[1]
+	if !isValidID(reqID) {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	dir := filepath.Join(filesDir, deviceID)
+	dataPath := filepath.Join(dir, reqID+".bin")
+	metaPath := filepath.Join(dir, reqID+".meta.json")
+
+	if metaBytes, err := os.ReadFile(metaPath); err == nil {
+		var meta struct {
+			Filename string `json:"filename"`
+		}
+		if json.Unmarshal(metaBytes, &meta) == nil && meta.Filename != "" {
+			w.Header().Set("Content-Disposition",
+				`attachment; filename="`+strings.ReplaceAll(meta.Filename, `"`, ``)+`"`)
+		}
+	}
+	http.ServeFile(w, r, dataPath)
 }
 
 func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
@@ -289,14 +386,17 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 	}
 
 	body, _ := io.ReadAll(r.Body)
-	var req struct {
-		Command string `json:"command"`
+	var req map[string]interface{}
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, `{"error":"bad json"}`, http.StatusBadRequest)
+		return
 	}
-	if err := json.Unmarshal(body, &req); err != nil || req.Command == "" {
+	cmdStr, _ := req["command"].(string)
+	if cmdStr == "" {
 		http.Error(w, `{"error":"command required"}`, http.StatusBadRequest)
 		return
 	}
-	if !allowedCommands[req.Command] {
+	if !allowedCommands[cmdStr] {
 		http.Error(w, `{"error":"unknown command"}`, http.StatusBadRequest)
 		return
 	}
@@ -314,17 +414,15 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 	}
 
 	reqID := newRequestID()
-	cmdJSON, _ := json.Marshal(map[string]string{
-		"type":    "command",
-		"command": req.Command,
-		"id":      reqID,
-	})
+	req["type"] = "command"
+	req["id"] = reqID
+	cmdJSON, _ := json.Marshal(req)
 
 	pc := &pendingCmd{done: make(chan json.RawMessage, 1), ts: time.Now()}
 	pending.Store(reqID, pc)
 	defer pending.Delete(reqID)
 
-	log.Printf("[CMD] → %s %s (id=%s)", deviceID, req.Command, reqID)
+	log.Printf("[CMD] → %s %s (id=%s)", deviceID, cmdStr, reqID)
 
 	select {
 	case d.send <- cmdJSON:
@@ -335,26 +433,29 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 	}
 
 	timeout := 5 * time.Second
-	if req.Command == "screenshot" {
-		timeout = 15 * time.Second
+	if cmdStr == "screenshot" || cmdStr == "download_file" {
+		timeout = 30 * time.Second
 	}
 
 	select {
 	case res := <-pc.done:
 		latency := time.Since(pc.ts).Milliseconds()
-		log.Printf("[CMD] ✓ %s replied in %dms (id=%s)", req.Command, latency, reqID)
+		log.Printf("[CMD] ✓ %s replied in %dms (id=%s)", cmdStr, latency, reqID)
 		resp := map[string]interface{}{
 			"ok":         true,
-			"command":    req.Command,
+			"command":    cmdStr,
 			"latency_ms": latency,
 			"result":     res,
 		}
-		if req.Command == "screenshot" {
+		if cmdStr == "screenshot" {
 			resp["screenshot_url"] = "/api/screenshots/" + reqID
+		}
+		if cmdStr == "download_file" {
+			resp["file_url"] = "/api/files/" + deviceID + "/" + reqID
 		}
 		json.NewEncoder(w).Encode(resp)
 	case <-time.After(timeout):
-		log.Printf("[CMD] ✗ timeout waiting for %s (id=%s)", req.Command, reqID)
+		log.Printf("[CMD] ✗ timeout waiting for %s (id=%s)", cmdStr, reqID)
 		http.Error(w, `{"error":"command timeout"}`, http.StatusGatewayTimeout)
 	}
 }
@@ -544,6 +645,7 @@ func main() {
 	http.HandleFunc("/api/devices/", devicesPathHandler)
 	http.HandleFunc("/api/screenshots", screenshotsListHandler)
 	http.HandleFunc("/api/screenshots/", screenshotsRouteHandler)
+	http.HandleFunc("/api/files/", fileServeHandler)
 	http.HandleFunc("/health", healthHandler)
 
 	log.Println("MeshConnect server listening on :8443")

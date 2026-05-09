@@ -2,8 +2,11 @@ package com.meshconnect.client
 
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,20 +45,44 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val perms = mutableListOf(
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                1
-            )
+            perms.add(android.Manifest.permission.POST_NOTIFICATIONS)
         }
+        ActivityCompat.requestPermissions(this, perms.toTypedArray(), 1)
 
         startBtn   = findViewById(R.id.btn_start)
         statusView = findViewById(R.id.tv_status)
 
-        startBtn.setOnClickListener {
-            val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            projectionLauncher.launch(mpm.createScreenCaptureIntent())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            !Environment.isExternalStorageManager()) {
+            statusView.text = "Tap Start Service.\n(File browser needs ‘All files access’ — you'll be prompted.)"
         }
+
+        startBtn.setOnClickListener {
+            ensureFilesPermissionThenStart()
+        }
+    }
+
+    private fun ensureFilesPermissionThenStart() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            !Environment.isExternalStorageManager()) {
+            try {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+                statusView.text = "Grant ‘All files access’, then come back and tap Start Service again."
+                return
+            } catch (_: Exception) {
+                // fall through and start anyway
+            }
+        }
+        val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        projectionLauncher.launch(mpm.createScreenCaptureIntent())
     }
 }

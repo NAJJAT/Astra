@@ -254,6 +254,33 @@
             text-align: center;
         }
 
+        /* Location block */
+        .loc {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            margin: 8px 0 4px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+        .loc-coords {
+            font-family: ui-monospace, monospace;
+            color: #93c5fd;
+        }
+        .loc-acc { color: #64748b; }
+        .loc a {
+            margin-left: auto;
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .loc a:hover { text-decoration: underline; }
+        .loc.stale .loc-coords { color: #fbbf24; }
+
         /* Command buttons */
         .actions {
             display: flex;
@@ -347,6 +374,95 @@
             font-size: 13px;
         }
         .modal-actions a:hover { background: #2563eb; }
+
+        /* File browser modal */
+        .files-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            padding: 24px;
+        }
+        .files-modal.show { display: flex; }
+        .files-content {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            width: min(900px, 95vw);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .files-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .files-header-title { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+        .files-pathbar {
+            padding: 10px 20px;
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-family: ui-monospace, monospace;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .files-pathbar input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 12px;
+            outline: none;
+        }
+        .files-pathbar input:focus { border-color: #3b82f6; }
+        .files-pathbar button {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .files-pathbar button:hover { background: #334155; color: #e2e8f0; }
+        .files-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .files-row {
+            display: grid;
+            grid-template-columns: 28px 1fr 90px 130px 70px;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 20px;
+            font-size: 13px;
+            color: #cbd5e1;
+            cursor: default;
+            transition: background 0.1s;
+        }
+        .files-row:hover { background: #1e293b; }
+        .files-row.dir { cursor: pointer; }
+        .files-row.dir .files-name { color: #93c5fd; font-weight: 500; }
+        .files-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .files-size, .files-date { color: #64748b; font-size: 11px; }
+        .files-row .btn-cmd { font-size: 11px; padding: 4px 8px; }
+        .files-empty { padding: 40px; text-align: center; color: #475569; font-size: 13px; }
+        .files-loading { padding: 40px; text-align: center; color: #475569; font-size: 13px; }
+        .files-error { padding: 20px; color: #f87171; font-size: 13px; }
 
         /* Toast */
         .toasts {
@@ -518,6 +634,23 @@
 
 <div class="toasts" id="toasts"></div>
 
+<div class="files-modal" id="files-modal">
+    <div class="files-content">
+        <div class="files-header">
+            <div class="files-header-title" id="files-title">📁 Files</div>
+            <button class="modal-close" onclick="closeFiles()">✕ Close</button>
+        </div>
+        <div class="files-pathbar">
+            <button onclick="navUp()">⬆ Up</button>
+            <input id="files-path" placeholder="/sdcard">
+            <button onclick="navGo()">Go</button>
+        </div>
+        <div class="files-list" id="files-list">
+            <div class="files-loading">Loading…</div>
+        </div>
+    </div>
+</div>
+
 <div class="modal-bg" id="modal" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -575,6 +708,10 @@
     document.getElementById('grid').addEventListener('click', e => {
         const btn = e.target.closest('.btn-cmd');
         if (!btn || btn.disabled) return;
+        if (btn.dataset.cmd === 'open_files') {
+            openFiles(btn.dataset.id);
+            return;
+        }
         runCommand(btn);
     });
 
@@ -625,6 +762,156 @@
         document.getElementById('toasts').appendChild(t);
         setTimeout(() => t.remove(), 3500);
     }
+
+    /* ── File browser ── */
+    let filesDeviceId = null;
+    let filesCurrentPath = '';
+
+    function openFiles(deviceId) {
+        filesDeviceId = deviceId;
+        filesCurrentPath = '';
+        document.getElementById('files-title').textContent =
+            `📁 Files · ${deviceId.slice(0, 12)}…`;
+        document.getElementById('files-path').value = '';
+        document.getElementById('files-modal').classList.add('show');
+        loadFiles('');
+    }
+
+    function closeFiles() {
+        document.getElementById('files-modal').classList.remove('show');
+    }
+
+    function navUp() {
+        const path = filesCurrentPath;
+        if (!path || path === '/') return;
+        const parent = path.replace(/\/[^/]*$/, '') || '/';
+        loadFiles(parent);
+    }
+
+    function navGo() {
+        const p = document.getElementById('files-path').value.trim();
+        loadFiles(p);
+    }
+
+    async function loadFiles(path) {
+        const list = document.getElementById('files-list');
+        list.innerHTML = `<div class="files-loading">Loading ${esc(path || '/sdcard')}…</div>`;
+        try {
+            const r = await fetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'ls', path })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                list.innerHTML = `<div class="files-error">Failed: ${esc(err.error || r.status)}</div>`;
+                return;
+            }
+            const data = await r.json();
+            const result = data.result;
+            if (!result || !result.success) {
+                list.innerHTML = `<div class="files-error">${esc(result?.message || 'unknown error')}</div>`;
+                return;
+            }
+            filesCurrentPath = result.path;
+            document.getElementById('files-path').value = result.path;
+            renderFiles(result.entries);
+        } catch (e) {
+            list.innerHTML = `<div class="files-error">Network error</div>`;
+        }
+    }
+
+    function renderFiles(entries) {
+        const list = document.getElementById('files-list');
+        if (!entries.length) {
+            list.innerHTML = `<div class="files-empty">Empty folder</div>`;
+            return;
+        }
+        list.innerHTML = entries.map(f => {
+            const icon = f.is_dir ? '📁' : fileIcon(f.name);
+            const size = f.is_dir ? '' : fmtKB(f.size);
+            const date = f.modified ? new Date(f.modified).toLocaleString() : '';
+            const action = f.is_dir
+                ? ''
+                : `<button class="btn-cmd" data-dl="${esc(f.name)}">⬇ Download</button>`;
+            return `
+            <div class="files-row ${f.is_dir ? 'dir' : ''}" data-name="${esc(f.name)}" data-isdir="${f.is_dir}">
+                <span>${icon}</span>
+                <span class="files-name" title="${esc(f.name)}">${esc(f.name)}</span>
+                <span class="files-size">${size}</span>
+                <span class="files-date">${esc(date)}</span>
+                <span>${action}</span>
+            </div>`;
+        }).join('');
+    }
+
+    function fileIcon(name) {
+        const n = name.toLowerCase();
+        if (/\.(jpe?g|png|gif|webp|bmp)$/.test(n)) return '🖼️';
+        if (/\.(mp4|mkv|avi|mov|webm)$/.test(n)) return '🎬';
+        if (/\.(mp3|wav|flac|ogg|m4a)$/.test(n)) return '🎵';
+        if (/\.(zip|rar|7z|tar|gz)$/.test(n)) return '📦';
+        if (/\.(pdf)$/.test(n)) return '📕';
+        if (/\.(txt|log|md)$/.test(n)) return '📄';
+        if (/\.(apk)$/.test(n)) return '📦';
+        return '📄';
+    }
+
+    document.getElementById('files-list').addEventListener('click', async e => {
+        const dlBtn = e.target.closest('[data-dl]');
+        if (dlBtn) {
+            e.stopPropagation();
+            const name = dlBtn.dataset.dl;
+            const fullPath = filesCurrentPath.replace(/\/$/, '') + '/' + name;
+            await downloadFromPhone(fullPath, dlBtn);
+            return;
+        }
+        const row = e.target.closest('.files-row.dir');
+        if (row) {
+            const name = row.dataset.name;
+            const fullPath = filesCurrentPath.replace(/\/$/, '') + '/' + name;
+            loadFiles(fullPath);
+        }
+    });
+
+    async function downloadFromPhone(path, btn) {
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = 'Uploading…';
+        try {
+            const r = await fetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'download_file', path })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                toast(`Download failed: ${err.error || r.status}`, 'error');
+                return;
+            }
+            const data = await r.json();
+            if (!data.result?.success) {
+                toast(`Download failed: ${data.result?.message || 'unknown'}`, 'error');
+                return;
+            }
+            toast(`Downloaded ${data.result.filename} (${fmtKB(data.result.size)})`, 'success');
+            const a = document.createElement('a');
+            a.href = data.file_url;
+            a.download = data.result.filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (e) {
+            toast('Network error', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+    }
+
+    document.getElementById('files-path').addEventListener('keydown', e => {
+        if (e.key === 'Enter') navGo();
+    });
 
     async function fetchScreenshots() {
         try {
@@ -698,7 +985,10 @@
         document.getElementById('modal-img').src = '';
     }
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') {
+            closeModal();
+            closeFiles();
+        }
     });
 
     function manualRefresh() {
@@ -773,6 +1063,8 @@
 
             ${statusBlock}
 
+            ${locationBlock(s)}
+
             <div class="footer-row">
                 <span class="item">${netIcon(s.network)} ${esc(s.network || '?')}</span>
                 <span class="item">🤖 Android ${os}</span>
@@ -785,6 +1077,7 @@
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="get_info"   ${d.online ? '' : 'disabled'}>↻ Refresh</button>
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="vibrate"    ${d.online ? '' : 'disabled'}>📳 Vibrate</button>
                 <button class="btn-cmd" data-id="${d.id}" data-cmd="screenshot" ${d.online ? '' : 'disabled'}>📷 Screenshot</button>
+                <button class="btn-cmd" data-id="${d.id}" data-cmd="open_files" ${d.online ? '' : 'disabled'}>📁 Files</button>
             </div>
         </div>`;
     }
@@ -821,6 +1114,24 @@
                 <div class="bar"><div class="bar-fill storage" style="width:${stoPct}%"></div></div>
             </div>
         </div>`;
+    }
+
+    function locationBlock(s) {
+        if (!s || !s.latitude || !s.longitude) return '';
+        const lat = Number(s.latitude).toFixed(5);
+        const lng = Number(s.longitude).toFixed(5);
+        const acc = s.location_accuracy ? `±${Math.round(s.location_accuracy)}m` : '';
+        const ageMs = s.location_time ? Date.now() - s.location_time : 0;
+        const stale = ageMs > 30 * 60 * 1000; // older than 30 min
+        const ageStr = ageMs > 0 ? ` · ${ago(s.location_time)}` : '';
+        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        return `
+            <div class="loc ${stale ? 'stale' : ''}">
+                <span>📍</span>
+                <span class="loc-coords">${lat}, ${lng}</span>
+                <span class="loc-acc">${acc}${ageStr}</span>
+                <a href="${mapsUrl}" target="_blank" rel="noopener">Open map</a>
+            </div>`;
     }
 
     /* helpers */
