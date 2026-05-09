@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -158,11 +159,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				ID string `json:"id"`
 			}
 			if err := json.Unmarshal(msg, &res); err == nil && res.ID != "" {
+				log.Printf("[CMD] ← result from %s (id=%s)", info.ID, res.ID)
 				if v, ok := pending.Load(res.ID); ok {
 					select {
 					case v.(*pendingCmd).done <- json.RawMessage(msg):
 					default:
 					}
+				} else {
+					log.Printf("[CMD] ! no pending entry for id=%s (timed out?)", res.ID)
 				}
 			}
 		}
@@ -320,9 +324,12 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 	pending.Store(reqID, pc)
 	defer pending.Delete(reqID)
 
+	log.Printf("[CMD] → %s %s (id=%s)", deviceID, req.Command, reqID)
+
 	select {
 	case d.send <- cmdJSON:
 	case <-time.After(2 * time.Second):
+		log.Printf("[CMD] ✗ send queue full for %s", deviceID)
 		http.Error(w, `{"error":"send queue full"}`, http.StatusServiceUnavailable)
 		return
 	}
@@ -334,10 +341,12 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 
 	select {
 	case res := <-pc.done:
+		latency := time.Since(pc.ts).Milliseconds()
+		log.Printf("[CMD] ✓ %s replied in %dms (id=%s)", req.Command, latency, reqID)
 		resp := map[string]interface{}{
 			"ok":         true,
 			"command":    req.Command,
-			"latency_ms": time.Since(pc.ts).Milliseconds(),
+			"latency_ms": latency,
 			"result":     res,
 		}
 		if req.Command == "screenshot" {
@@ -345,6 +354,7 @@ func commandHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
 		}
 		json.NewEncoder(w).Encode(resp)
 	case <-time.After(timeout):
+		log.Printf("[CMD] ✗ timeout waiting for %s (id=%s)", req.Command, reqID)
 		http.Error(w, `{"error":"command timeout"}`, http.StatusGatewayTimeout)
 	}
 }
@@ -387,6 +397,17 @@ func screenshotUploadHandler(w http.ResponseWriter, r *http.Request, deviceID, r
 	})
 }
 
+func screenshotsRouteHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead:
+		screenshotServeHandler(w, r)
+	case http.MethodDelete:
+		screenshotDeleteHandler(w, r)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func screenshotServeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	id := strings.TrimPrefix(r.URL.Path, "/api/screenshots/")
@@ -397,6 +418,70 @@ func screenshotServeHandler(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(screenshotsDir, id+".jpg")
 	w.Header().Set("Cache-Control", "public, max-age=31536000")
 	http.ServeFile(w, r, path)
+}
+
+type ScreenshotEntry struct {
+	ID        string    `json:"id"`
+	URL       string    `json:"url"`
+	Size      int64     `json:"size"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func screenshotsListHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	entries := []ScreenshotEntry{}
+	files, err := os.ReadDir(screenshotsDir)
+	if err == nil {
+		for _, f := range files {
+			if f.IsDir() || !strings.HasSuffix(f.Name(), ".jpg") {
+				continue
+			}
+			id := strings.TrimSuffix(f.Name(), ".jpg")
+			if !isValidID(id) {
+				continue
+			}
+			info, err := f.Info()
+			if err != nil {
+				continue
+			}
+			entries = append(entries, ScreenshotEntry{
+				ID:        id,
+				URL:       "/api/screenshots/" + id,
+				Size:      info.Size(),
+				CreatedAt: info.ModTime(),
+			})
+		}
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].CreatedAt.After(entries[j].CreatedAt)
+	})
+	json.NewEncoder(w).Encode(entries)
+}
+
+func screenshotDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	id := strings.TrimPrefix(r.URL.Path, "/api/screenshots/")
+	id = strings.TrimSuffix(id, "/")
+	if !isValidID(id) {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	path := filepath.Join(screenshotsDir, id+".jpg")
+	if err := os.Remove(path); err != nil {
+		if os.IsNotExist(err) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "delete failed", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func loadDevices() {
@@ -457,7 +542,8 @@ func main() {
 	http.HandleFunc("/ws", wsHandler)
 	http.HandleFunc("/api/devices", devicesHandler)
 	http.HandleFunc("/api/devices/", devicesPathHandler)
-	http.HandleFunc("/api/screenshots/", screenshotServeHandler)
+	http.HandleFunc("/api/screenshots", screenshotsListHandler)
+	http.HandleFunc("/api/screenshots/", screenshotsRouteHandler)
 	http.HandleFunc("/health", healthHandler)
 
 	log.Println("MeshConnect server listening on :8443")
