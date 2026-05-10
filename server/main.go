@@ -58,6 +58,7 @@ type Device struct {
 	Status   DeviceStatus `json:"status"`
 	Online   bool         `json:"online"`
 	LastSeen time.Time    `json:"last_seen"`
+	Tags     []string     `json:"tags,omitempty"`
 	conn     *websocket.Conn
 	send     chan []byte
 }
@@ -76,6 +77,7 @@ type DeviceResponse struct {
 	Online       bool         `json:"online"`
 	LastSeen     time.Time    `json:"last_seen"`
 	Status       DeviceStatus `json:"status"`
+	Tags         []string     `json:"tags"`
 }
 
 type wsMessage struct {
@@ -259,6 +261,10 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	mu.RLock()
 	list := make([]DeviceResponse, 0, len(devices))
 	for _, d := range devices {
+		tags := d.Tags
+		if tags == nil {
+			tags = []string{}
+		}
 		list = append(list, DeviceResponse{
 			ID:           d.Info.ID,
 			Name:         d.Info.Name,
@@ -268,6 +274,7 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 			Online:       d.Online,
 			LastSeen:     d.LastSeen,
 			Status:       d.Status,
+			Tags:         tags,
 		})
 	}
 	mu.RUnlock()
@@ -341,9 +348,51 @@ func devicesPathHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fileUploadHandler(w, r, deviceID, parts[2])
+	case "tags":
+		tagsHandler(w, r, deviceID)
 	default:
 		http.Error(w, `{"error":"unknown action"}`, http.StatusNotFound)
 	}
+}
+
+func tagsHandler(w http.ResponseWriter, r *http.Request, deviceID string) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPut && r.Method != http.MethodPost {
+		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+	var body struct {
+		Tags []string `json:"tags"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, `{"error":"bad json"}`, http.StatusBadRequest)
+		return
+	}
+	cleaned := make([]string, 0, len(body.Tags))
+	seen := map[string]bool{}
+	for _, t := range body.Tags {
+		t = strings.TrimSpace(t)
+		if t == "" || len(t) > 32 || seen[t] {
+			continue
+		}
+		seen[t] = true
+		cleaned = append(cleaned, t)
+		if len(cleaned) >= 16 {
+			break
+		}
+	}
+	mu.Lock()
+	d, ok := devices[deviceID]
+	if ok {
+		d.Tags = cleaned
+	}
+	mu.Unlock()
+	if !ok {
+		http.Error(w, `{"error":"device not found"}`, http.StatusNotFound)
+		return
+	}
+	go saveDevices()
+	json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "tags": cleaned})
 }
 
 func fileUploadHandler(w http.ResponseWriter, r *http.Request, deviceID, reqID string) {

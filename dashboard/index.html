@@ -290,6 +290,17 @@
             padding-top: 12px;
             border-top: 1px solid #0f172a;
         }
+        .tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 4px; align-items: center; }
+        .tag {
+            font-size: 11px; padding: 2px 8px; border-radius: 10px;
+            background: #1e293b; color: #93c5fd; border: 1px solid #334155;
+        }
+        .tag-edit-btn {
+            font-size: 11px; padding: 2px 8px; border-radius: 10px;
+            background: transparent; color: #64748b; border: 1px dashed #334155;
+            cursor: pointer;
+        }
+        .tag-edit-btn:hover { color: #cbd5e1; border-color: #64748b; }
         .btn-cmd {
             flex: 1 1 auto;
             min-width: 90px;
@@ -765,6 +776,11 @@
     });
 
     document.getElementById('grid').addEventListener('click', e => {
+        const tagBtn = e.target.closest('[data-tag-edit]');
+        if (tagBtn) {
+            editTags(tagBtn.dataset.tagEdit);
+            return;
+        }
         const btn = e.target.closest('.btn-cmd');
         if (!btn || btn.disabled) return;
         if (btn.dataset.cmd === 'open_files') {
@@ -790,6 +806,32 @@
         document.getElementById('notify-modal').classList.remove('show');
         notifyDeviceId = null;
     }
+    async function editTags(deviceId) {
+        const card = document.querySelector(`[data-tag-edit="${CSS.escape(deviceId)}"]`)?.closest('.card');
+        const existing = card
+            ? Array.from(card.querySelectorAll('.tag')).map(el => el.textContent).join(', ')
+            : '';
+        const input = prompt('Tags (comma-separated, max 16, 32 chars each):', existing);
+        if (input === null) return;
+        const tags = input.split(',').map(s => s.trim()).filter(Boolean);
+        try {
+            const r = await authFetch(`/api/devices/${encodeURIComponent(deviceId)}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tags })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                toast(`Tags failed: ${err.error || r.status}`, 'error');
+                return;
+            }
+            toast('Tags updated', 'success');
+            fetchDevices();
+        } catch (e) {
+            toast('Network error', 'error');
+        }
+    }
+
     async function sendNotify() {
         if (!notifyDeviceId) return;
         const title = document.getElementById('notify-title').value.trim() || 'MeshConnect';
@@ -1245,6 +1287,11 @@
             </div>
             <div class="card-name">${name}</div>
             <div class="card-model">${maker} ${model} · ${id}…</div>
+
+            <div class="tags">
+                ${(d.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}
+                <button class="tag-edit-btn" data-tag-edit="${esc(d.id)}" title="Edit tags">+ tags</button>
+            </div>
 
             ${statusBlock}
 

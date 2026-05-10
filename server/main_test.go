@@ -188,6 +188,63 @@ func TestCleanupOfflineDevices(t *testing.T) {
 	}
 }
 
+func TestTagsHandler(t *testing.T) {
+	mu.Lock()
+	devices = map[string]*Device{
+		"abc123": {Info: DeviceInfo{ID: "abc123"}, Online: true},
+	}
+	mu.Unlock()
+	t.Cleanup(func() {
+		mu.Lock()
+		devices = map[string]*Device{}
+		mu.Unlock()
+	})
+
+	put := func(id, body string) (*httptest.ResponseRecorder, *Device) {
+		req := httptest.NewRequest("PUT", "/x", strings.NewReader(body))
+		rec := httptest.NewRecorder()
+		tagsHandler(rec, req, id)
+		mu.RLock()
+		d := devices[id]
+		mu.RUnlock()
+		return rec, d
+	}
+
+	rec, d := put("abc123", `{"tags":["work","  family ","work","",""]}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body=%s", rec.Code, rec.Body.String())
+	}
+	if d == nil || len(d.Tags) != 2 || d.Tags[0] != "work" || d.Tags[1] != "family" {
+		t.Errorf("tags = %v, want [work family]", d.Tags)
+	}
+
+	rec, _ = put("missing", `{"tags":["x"]}`)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("missing device: status = %d, want 404", rec.Code)
+	}
+
+	req := httptest.NewRequest("GET", "/x", strings.NewReader(`{"tags":["x"]}`))
+	rec = httptest.NewRecorder()
+	tagsHandler(rec, req, "abc123")
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Errorf("GET: status = %d, want 405", rec.Code)
+	}
+
+	rec, _ = put("abc123", `{`)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("bad json: status = %d, want 400", rec.Code)
+	}
+
+	long := strings.Repeat("a", 50)
+	rec, d = put("abc123", `{"tags":["`+long+`","ok"]}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if len(d.Tags) != 1 || d.Tags[0] != "ok" {
+		t.Errorf("oversize-filtered tags = %v, want [ok]", d.Tags)
+	}
+}
+
 func TestExtractToken(t *testing.T) {
 	req := httptest.NewRequest("GET", "/x?token=fromquery", nil)
 	if got := extractToken(req); got != "fromquery" {
