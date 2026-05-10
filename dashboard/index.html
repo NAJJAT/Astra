@@ -635,31 +635,12 @@
 </head>
 <body>
 
-<!-- ── LOGIN ── -->
-<div id="login-page">
-    <div class="login-box">
-        <div class="login-logo">🔷 MeshConnect</div>
-        <div class="login-sub">Device Management Dashboard</div>
-        <div class="form-group">
-            <label>Username</label>
-            <input id="username" type="text" placeholder="admin" autocomplete="username">
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input id="password" type="password" placeholder="••••••••" autocomplete="current-password">
-        </div>
-        <button class="btn-login" onclick="login()">Sign In</button>
-        <div class="login-error" id="login-error">Invalid username or password</div>
-    </div>
-</div>
-
 <!-- ── DASHBOARD ── -->
 <div id="dashboard-page">
     <div class="header">
         <div class="header-logo">🔷 MeshConnect</div>
         <div class="header-right">
             <span class="refresh-info">Auto-refresh: 5s</span>
-            <button class="btn-logout" onclick="logout()">Sign Out</button>
         </div>
     </div>
 
@@ -762,44 +743,26 @@
 </div>
 
 <script>
-    const CREDS = { user: 'admin', pass: 'admin123' };
     const API   = '/api/devices';
+    const TOKEN = '6c2b3174134098b304f2f7f6b433476b4c2d5eeb1725ee61966fc55ab4fdd542';
     let timer   = null;
 
+    function authFetch(input, init = {}) {
+        const headers = new Headers(init.headers || {});
+        headers.set('Authorization', 'Bearer ' + TOKEN);
+        return fetch(input, { ...init, headers });
+    }
+    function tokened(url) {
+        if (!url) return url;
+        return url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(TOKEN);
+    }
+
     window.addEventListener('load', () => {
-        if (sessionStorage.getItem('auth') === '1') showDashboard();
-        document.getElementById('password').addEventListener('keydown', e => {
-            if (e.key === 'Enter') login();
-        });
-    });
-
-    function login() {
-        const u = document.getElementById('username').value.trim();
-        const p = document.getElementById('password').value;
-        if (u === CREDS.user && p === CREDS.pass) {
-            sessionStorage.setItem('auth', '1');
-            showDashboard();
-        } else {
-            document.getElementById('login-error').style.display = 'block';
-        }
-    }
-
-    function logout() {
-        sessionStorage.removeItem('auth');
-        clearInterval(timer);
-        document.getElementById('dashboard-page').style.display = 'none';
-        document.getElementById('login-page').style.display = 'flex';
-        document.getElementById('password').value = '';
-        document.getElementById('login-error').style.display = 'none';
-    }
-
-    function showDashboard() {
-        document.getElementById('login-page').style.display = 'none';
         document.getElementById('dashboard-page').style.display = 'block';
         fetchDevices();
         fetchScreenshots();
         timer = setInterval(() => { fetchDevices(); fetchScreenshots(); }, 5000);
-    }
+    });
 
     document.getElementById('grid').addEventListener('click', e => {
         const btn = e.target.closest('.btn-cmd');
@@ -838,7 +801,7 @@
         const id = notifyDeviceId;
         closeNotify();
         try {
-            const r = await fetch(`/api/devices/${encodeURIComponent(id)}/command`, {
+            const r = await authFetch(`/api/devices/${encodeURIComponent(id)}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'notify', title, text })
@@ -873,7 +836,7 @@
         btn.classList.add('busy');
         btn.innerHTML = '…';
         try {
-            const r = await fetch(`/api/devices/${encodeURIComponent(id)}/command`, {
+            const r = await authFetch(`/api/devices/${encodeURIComponent(id)}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
@@ -948,7 +911,7 @@
         const list = document.getElementById('files-list');
         list.innerHTML = `<div class="files-loading">Loading ${esc(path || '/sdcard')}…</div>`;
         try {
-            const r = await fetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
+            const r = await authFetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'ls', path })
@@ -1030,7 +993,7 @@
         btn.disabled = true;
         btn.innerHTML = 'Uploading…';
         try {
-            const r = await fetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
+            const r = await authFetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'download_file', path })
@@ -1047,7 +1010,7 @@
             }
             toast(`Downloaded ${data.result.filename} (${fmtKB(data.result.size)})`, 'success');
             const a = document.createElement('a');
-            a.href = data.file_url;
+            a.href = tokened(data.file_url);
             a.download = data.result.filename;
             document.body.appendChild(a);
             a.click();
@@ -1083,7 +1046,7 @@
         toast(`Uploading ${file.name} (${fmtKB(file.size)}) to server…`, '');
         let uploadId, filename;
         try {
-            const r = await fetch('/api/uploads', {
+            const r = await authFetch('/api/uploads', {
                 method: 'POST',
                 headers: {
                     'X-Filename': encodeURIComponent(file.name),
@@ -1105,7 +1068,7 @@
 
         toast(`Sending ${filename} to phone → ${filesCurrentPath}`, '');
         try {
-            const r = await fetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
+            const r = await authFetch(`/api/devices/${encodeURIComponent(filesDeviceId)}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1125,7 +1088,7 @@
             if (result.success) {
                 toast(`✓ Saved to ${result.path}`, 'success');
                 loadFiles(filesCurrentPath);
-                fetch(`/api/uploads/${encodeURIComponent(uploadId)}`, { method: 'DELETE' });
+                authFetch(`/api/uploads/${encodeURIComponent(uploadId)}`, { method: 'DELETE' });
             } else {
                 toast(`Phone error: ${result.message || 'unknown'}`, 'error');
             }
@@ -1136,7 +1099,7 @@
 
     async function fetchScreenshots() {
         try {
-            const r = await fetch('/api/screenshots');
+            const r = await authFetch('/api/screenshots');
             if (!r.ok) return;
             renderScreenshots(await r.json());
         } catch (e) { /* ignore */ }
@@ -1153,7 +1116,7 @@
         cnt.textContent = `${list.length} total`;
         gal.innerHTML = list.map(s => `
             <div class="thumb" data-id="${esc(s.id)}" data-url="${esc(s.url)}">
-                <img src="${esc(s.url)}" alt="screenshot" onerror="this.style.opacity=0.3">
+                <img src="${esc(tokened(s.url))}" alt="screenshot" onerror="this.style.opacity=0.3">
                 <div class="thumb-info">
                     <span>${ago(s.created_at)} · ${fmtKB(s.size)}</span>
                     <button class="thumb-del" data-del="${esc(s.id)}" title="Delete">✕</button>
@@ -1169,7 +1132,7 @@
             const id = del.dataset.del;
             if (!confirm('Delete this screenshot?')) return;
             try {
-                const r = await fetch(`/api/screenshots/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                const r = await authFetch(`/api/screenshots/${encodeURIComponent(id)}`, { method: 'DELETE' });
                 if (r.ok || r.status === 204) {
                     toast('Screenshot deleted', 'success');
                     fetchScreenshots();
@@ -1190,7 +1153,7 @@
     const fmtKB = b => b < 1024 ? `${b} B` : b < 1024*1024 ? `${(b/1024).toFixed(0)} KB` : `${(b/1024/1024).toFixed(1)} MB`;
 
     function openScreenshot(url, deviceId) {
-        const cacheBust = `${url}?t=${Date.now()}`;
+        const cacheBust = tokened(`${url}?t=${Date.now()}`);
         document.getElementById('modal-img').src = cacheBust;
         document.getElementById('modal-open').href = cacheBust;
         document.getElementById('modal-download').href = cacheBust;
@@ -1223,7 +1186,7 @@
 
     async function fetchDevices() {
         try {
-            const r = await fetch(API);
+            const r = await authFetch(API);
             if (!r.ok) return;
             render(await r.json());
         } catch (e) { /* server unreachable */ }

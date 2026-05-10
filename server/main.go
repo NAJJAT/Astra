@@ -82,13 +82,36 @@ type wsMessage struct {
 }
 
 var (
-	devices  = make(map[string]*Device)
-	mu       sync.RWMutex
-	pending  sync.Map // requestID → *pendingCmd
-	upgrader = websocket.Upgrader{
+	devices   = make(map[string]*Device)
+	mu        sync.RWMutex
+	pending   sync.Map // requestID → *pendingCmd
+	authToken string   // bearer token; required for /ws and /api/*
+	upgrader  = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 )
+
+func extractToken(r *http.Request) string {
+	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
+		return strings.TrimPrefix(h, "Bearer ")
+	}
+	return r.URL.Query().Get("token")
+}
+
+func authorized(r *http.Request) bool {
+	return authToken != "" && extractToken(r) == authToken
+}
+
+func requireAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !authorized(r) {
+			w.Header().Set("WWW-Authenticate", `Bearer realm="meshconnect"`)
+			http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+			return
+		}
+		next(w, r)
+	}
+}
 
 func newRequestID() string {
 	b := make([]byte, 8)
@@ -97,6 +120,11 @@ func newRequestID() string {
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
+	if !authorized(r) {
+		w.Header().Set("WWW-Authenticate", `Bearer realm="meshconnect"`)
+		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("upgrade:", err)
@@ -112,8 +140,9 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	conn.SetReadDeadline(time.Time{})
 
-	if info.ID == "" {
-		info.ID = r.RemoteAddr
+	if !isValidID(info.ID) {
+		log.Printf("rejecting connection with invalid id: %q (remote=%s)", info.ID, r.RemoteAddr)
+		return
 	}
 
 	device := &Device{
@@ -124,6 +153,9 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		send:     make(chan []byte, 16),
 	}
 	mu.Lock()
+	if prev, ok := devices[info.ID]; ok && prev.conn != nil {
+		prev.conn.Close()
+	}
 	devices[info.ID] = device
 	mu.Unlock()
 	go saveDevices()
@@ -258,6 +290,15 @@ var allowedCommands = map[string]bool{
 	"notify":        true,
 }
 
+func sanitizeFilenameHeader(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '"' || r == '\r' || r == '\n' || r < 0x20 {
+			return -1
+		}
+		return r
+	}, s)
+}
+
 func isValidID(s string) bool {
 	if len(s) == 0 || len(s) > 64 {
 		return false
@@ -279,6 +320,10 @@ func devicesPathHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	deviceID := parts[0]
+	if !isValidID(deviceID) {
+		http.Error(w, `{"error":"bad device id"}`, http.StatusBadRequest)
+		return
+	}
 	switch parts[1] {
 	case "command":
 		commandHandler(w, r, deviceID)
@@ -438,7 +483,7 @@ func uploadServeHandler(w http.ResponseWriter, r *http.Request, id string) {
 		}
 		if json.Unmarshal(metaBytes, &meta) == nil && meta.Filename != "" {
 			w.Header().Set("Content-Disposition",
-				`attachment; filename="`+strings.ReplaceAll(meta.Filename, `"`, ``)+`"`)
+				`attachment; filename="`+sanitizeFilenameHeader(meta.Filename)+`"`)
 		}
 	}
 	http.ServeFile(w, r, dataPath)
@@ -464,7 +509,7 @@ func fileServeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	deviceID, reqID := parts[0], parts[1]
-	if !isValidID(reqID) {
+	if !isValidID(deviceID) || !isValidID(reqID) {
 		http.Error(w, "bad id", http.StatusBadRequest)
 		return
 	}
@@ -478,7 +523,7 @@ func fileServeHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if json.Unmarshal(metaBytes, &meta) == nil && meta.Filename != "" {
 			w.Header().Set("Content-Disposition",
-				`attachment; filename="`+strings.ReplaceAll(meta.Filename, `"`, ``)+`"`)
+				`attachment; filename="`+sanitizeFilenameHeader(meta.Filename)+`"`)
 		}
 	}
 	http.ServeFile(w, r, dataPath)
@@ -718,8 +763,13 @@ func loadDevices() {
 
 func saveDevices() {
 	mu.RLock()
-	data, err := json.MarshalIndent(devices, "", "  ")
+	snapshot := make(map[string]Device, len(devices))
+	for id, d := range devices {
+		snapshot[id] = *d
+	}
 	mu.RUnlock()
+
+	data, err := json.MarshalIndent(snapshot, "", "  ")
 	if err != nil {
 		log.Printf("marshal devices: %v", err)
 		return
@@ -739,23 +789,30 @@ func saveDevices() {
 }
 
 func periodicSave() {
-	for range time.Tick(10 * time.Second) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
 		saveDevices()
 	}
 }
 
 func main() {
+	authToken = strings.TrimSpace(os.Getenv("MESH_TOKEN"))
+	if authToken == "" {
+		log.Fatal("MESH_TOKEN env var is required")
+	}
+
 	loadDevices()
 	go periodicSave()
 
 	http.HandleFunc("/ws", wsHandler)
-	http.HandleFunc("/api/devices", devicesHandler)
-	http.HandleFunc("/api/devices/", devicesPathHandler)
-	http.HandleFunc("/api/screenshots", screenshotsListHandler)
-	http.HandleFunc("/api/screenshots/", screenshotsRouteHandler)
-	http.HandleFunc("/api/files/", fileServeHandler)
-	http.HandleFunc("/api/uploads", uploadsRouteHandler)
-	http.HandleFunc("/api/uploads/", uploadsRouteHandler)
+	http.HandleFunc("/api/devices", requireAuth(devicesHandler))
+	http.HandleFunc("/api/devices/", requireAuth(devicesPathHandler))
+	http.HandleFunc("/api/screenshots", requireAuth(screenshotsListHandler))
+	http.HandleFunc("/api/screenshots/", requireAuth(screenshotsRouteHandler))
+	http.HandleFunc("/api/files/", requireAuth(fileServeHandler))
+	http.HandleFunc("/api/uploads", requireAuth(uploadsRouteHandler))
+	http.HandleFunc("/api/uploads/", requireAuth(uploadsRouteHandler))
 	http.HandleFunc("/health", healthHandler)
 
 	log.Println("MeshConnect server listening on :8443")

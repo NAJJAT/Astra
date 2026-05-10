@@ -59,9 +59,10 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URLEncoder
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-@Suppress("DEPRECATION")
 class WebSocketService : Service() {
 
     companion object {
@@ -69,6 +70,8 @@ class WebSocketService : Service() {
         const val MESSAGE_CHANNEL_ID = "meshconnect_msg"
         const val NOTIF_ID = 1
         const val SERVER_URL = "ws://20.86.120.120:8082/ws"
+        // Must match MESH_TOKEN in server/.env
+        const val AUTH_TOKEN = "6c2b3174134098b304f2f7f6b433476b4c2d5eeb1725ee61966fc55ab4fdd542"
         const val EXTRA_PROJECTION_RESULT_CODE = "projection_result_code"
         const val EXTRA_PROJECTION_DATA        = "projection_data"
         private const val TAG = "WebSocketService"
@@ -79,6 +82,7 @@ class WebSocketService : Service() {
     private var ws: WebSocket? = null
     private val handler = Handler(Looper.getMainLooper())
     private var retryDelay = 3_000L
+    private val ioExecutor: ExecutorService = Executors.newCachedThreadPool()
 
     private var projectionResultCode = 0
     private var projectionData: Intent? = null
@@ -104,13 +108,6 @@ class WebSocketService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notif = buildNotif("Connecting…")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            startForeground(NOTIF_ID, notif)
-        }
-
         if (intent != null) {
             val rc = intent.getIntExtra(EXTRA_PROJECTION_RESULT_CODE, 0)
             if (rc != 0) {
@@ -123,8 +120,30 @@ class WebSocketService : Service() {
             }
         }
 
+        val notif = buildNotif("Connecting…")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIF_ID, notif, currentForegroundTypes())
+        } else {
+            startForeground(NOTIF_ID, notif)
+        }
+
         if (ws == null) connect()
         return START_STICKY
+    }
+
+    private fun currentForegroundTypes(): Int {
+        var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+        if (projectionData != null) {
+            type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+        }
+        if (hasLocationPermission()) {
+            type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+        }
+        return type
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -134,6 +153,7 @@ class WebSocketService : Service() {
         handler.removeCallbacksAndMessages(null)
         ws?.close(1000, "stopped")
         client?.dispatcher?.executorService?.shutdown()
+        ioExecutor.shutdownNow()
         try { mediaProjection?.stop() } catch (_: Exception) {}
         captureThread.quitSafely()
         super.onDestroy()
@@ -146,7 +166,10 @@ class WebSocketService : Service() {
             .pingInterval(30, TimeUnit.SECONDS)
             .build()
 
-        val req = Request.Builder().url(SERVER_URL).build()
+        val req = Request.Builder()
+            .url(SERVER_URL)
+            .header("Authorization", "Bearer $AUTH_TOKEN")
+            .build()
         Log.i(TAG, "Connecting to $SERVER_URL")
         ws = client!!.newWebSocket(req, listener())
     }
@@ -304,6 +327,7 @@ class WebSocketService : Service() {
         return best
     }
 
+    @Suppress("DEPRECATION")
     private fun vibrate(): Boolean {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -503,7 +527,8 @@ class WebSocketService : Service() {
             }
         }, captureHandler)
 
-        cm.openCamera(cameraId, object : CameraDevice.StateCallback() {
+        try {
+            cm.openCamera(cameraId, object : CameraDevice.StateCallback() {
             override fun onOpened(c: CameraDevice) {
                 camera = c
                 try {
@@ -545,6 +570,12 @@ class WebSocketService : Service() {
                 cleanup()
             }
         }, captureHandler)
+        } catch (e: Exception) {
+            Log.e(TAG, "openCamera failed", e)
+            sendResult(webSocket, requestId, "camera", false, "openCamera: ${e.message}")
+            cleanup()
+            return
+        }
 
         captureHandler.postDelayed({
             if (!captured) {
@@ -558,7 +589,7 @@ class WebSocketService : Service() {
     /* ── File browser ── */
 
     private fun handleLs(webSocket: WebSocket, id: String, requestedPath: String) {
-        Thread {
+        ioExecutor.execute {
             try {
                 val target = if (requestedPath.isBlank())
                     Environment.getExternalStorageDirectory()
@@ -600,11 +631,11 @@ class WebSocketService : Service() {
                 Log.e(TAG, "ls failed", e)
                 sendResult(webSocket, id, "ls", false, "error: ${e.message}")
             }
-        }.start()
+        }
     }
 
     private fun handleDownloadFile(webSocket: WebSocket, id: String, path: String) {
-        Thread {
+        ioExecutor.execute {
             try {
                 val file = File(path)
                 if (!file.exists()) {
@@ -628,6 +659,7 @@ class WebSocketService : Service() {
                 val req = Request.Builder()
                     .url(url)
                     .post(body)
+                    .header("Authorization", "Bearer $AUTH_TOKEN")
                     .header("X-Filename", URLEncoder.encode(file.name, "UTF-8"))
                     .build()
 
@@ -651,7 +683,7 @@ class WebSocketService : Service() {
                 Log.e(TAG, "download_file failed", e)
                 sendResult(webSocket, id, "download_file", false, "error: ${e.message}")
             }
-        }.start()
+        }
     }
 
     private fun handleUploadFile(
@@ -661,7 +693,7 @@ class WebSocketService : Service() {
         filename: String,
         destDir: String
     ) {
-        Thread {
+        ioExecutor.execute {
             try {
                 if (uploadId.isBlank() || !uploadId.matches(Regex("^[0-9a-fA-F]+$"))) {
                     sendResult(webSocket, id, "upload_file", false, "invalid upload_id")
@@ -672,7 +704,10 @@ class WebSocketService : Service() {
                     .replaceFirst("wss://", "https://")
                     .removeSuffix("/ws")
                 val url = "$httpBase/api/uploads/$uploadId"
-                val req = Request.Builder().url(url).build()
+                val req = Request.Builder()
+                    .url(url)
+                    .header("Authorization", "Bearer $AUTH_TOKEN")
+                    .build()
 
                 client?.newCall(req)?.execute()?.use { resp ->
                     if (!resp.isSuccessful) {
@@ -711,7 +746,7 @@ class WebSocketService : Service() {
                 Log.e(TAG, "upload_file failed", e)
                 sendResult(webSocket, id, "upload_file", false, "error: ${e.message}")
             }
-        }.start()
+        }
     }
 
     /* ── HTTP upload helper (used by screenshot + camera) ── */
@@ -722,7 +757,11 @@ class WebSocketService : Service() {
             .removeSuffix("/ws")
         val url = "$httpBase/api/devices/$androidId/screenshots/$requestId"
         val body = jpeg.toRequestBody("image/jpeg".toMediaType())
-        val req = Request.Builder().url(url).post(body).build()
+        val req = Request.Builder()
+            .url(url)
+            .post(body)
+            .header("Authorization", "Bearer $AUTH_TOKEN")
+            .build()
         return try {
             client!!.newCall(req).execute().use { it.isSuccessful }
         } catch (e: Exception) {
