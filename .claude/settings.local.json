@@ -1,7 +1,23 @@
 {
   "permissions": {
     "allow": [
-      "Bash(findstr *)"
+      "Bash(findstr *)",
+      "Bash(gh pr *)",
+      "Bash(grep -vE '\\(\\\\.gradle|build-run|build/|\\\\.dex$|\\\\.class$|\\\\.bin$|\\\\.lock$|\\\\.png$|\\\\.jpg$|\\\\.jar$|\\\\.aar$|gradle-wrapper\\)')",
+      "Bash(go build *)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\ooo77\\\\Documents\\\\New project\\\\meshconnect\\\\server\"; go build -o $env:TEMP\\\\meshconnect-server.exe . 2>&1; Write-Output \"exit=$LASTEXITCODE\")",
+      "PowerShell($bytes = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create\\(\\).GetBytes\\($bytes\\); -join \\($bytes | ForEach-Object { $_.ToString\\(\"x2\"\\) }\\))",
+      "PowerShell($bytes = New-Object byte[] 12; [System.Security.Cryptography.RandomNumberGenerator]::Create\\(\\).GetBytes\\($bytes\\); [System.Convert]::ToBase64String\\($bytes\\).TrimEnd\\(\"=\"\\).Replace\\(\"+\",\"\"\\).Replace\\(\"/\",\"\"\\))",
+      "Bash(awk -F/ '{print $1\"/\"$2\"/\"$3}')",
+      "Bash(grep -E \"^client-android/\\(\\\\\\\\.gradle|\\\\\\\\.idea|\\\\\\\\.kotlin|app/build\\)\")",
+      "Bash(grep -cE \"^client-android/\\(\\\\\\\\.gradle|\\\\\\\\.idea|\\\\\\\\.kotlin|app/build\\)\")",
+      "Bash(grep -cE \"^\\(client-android/\\(\\\\\\\\.kotlin|local\\\\\\\\.properties\\)|.+\\\\\\\\.apk$\\)\")",
+      "Bash(grep -E \"^\\(client-android/\\(\\\\\\\\.kotlin|local\\\\\\\\.properties\\)|.+\\\\\\\\.apk$\\)\")",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(command -v go)",
+      "Bash(git update-index *)"
     ]
   }
 }
