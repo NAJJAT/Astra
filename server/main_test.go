@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestIsValidID(t *testing.T) {
@@ -142,6 +143,48 @@ func TestFileServeHandlerRejectsBadDeviceID(t *testing.T) {
 	fileServeHandler(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestCleanupOfflineDevices(t *testing.T) {
+	now := time.Now()
+	mu.Lock()
+	devices = map[string]*Device{
+		"online_stale":  {Info: DeviceInfo{ID: "online_stale"}, Online: true, LastSeen: now.Add(-48 * time.Hour)},
+		"offline_fresh": {Info: DeviceInfo{ID: "offline_fresh"}, Online: false, LastSeen: now.Add(-1 * time.Hour)},
+		"offline_stale": {Info: DeviceInfo{ID: "offline_stale"}, Online: false, LastSeen: now.Add(-72 * time.Hour)},
+	}
+	mu.Unlock()
+	t.Cleanup(func() {
+		mu.Lock()
+		devices = map[string]*Device{}
+		mu.Unlock()
+		deviceTTL = 0
+	})
+
+	deviceTTL = 0
+	if got := cleanupOfflineDevices(); got != 0 {
+		t.Errorf("ttl disabled: removed %d, want 0", got)
+	}
+
+	deviceTTL = 24 * time.Hour
+	got := cleanupOfflineDevices()
+	if got != 1 {
+		t.Errorf("ttl=24h: removed %d, want 1", got)
+	}
+	mu.RLock()
+	_, online := devices["online_stale"]
+	_, fresh := devices["offline_fresh"]
+	_, stale := devices["offline_stale"]
+	mu.RUnlock()
+	if !online {
+		t.Error("online device was removed")
+	}
+	if !fresh {
+		t.Error("fresh offline device was removed")
+	}
+	if stale {
+		t.Error("stale offline device was not removed")
 	}
 }
 

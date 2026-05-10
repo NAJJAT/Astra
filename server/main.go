@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -86,6 +87,7 @@ var (
 	mu        sync.RWMutex
 	pending   sync.Map // requestID → *pendingCmd
 	authToken string   // bearer token; required for /ws and /api/*
+	deviceTTL time.Duration // 0 = disabled
 	upgrader  = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
@@ -796,14 +798,53 @@ func periodicSave() {
 	}
 }
 
+func cleanupOfflineDevices() int {
+	if deviceTTL <= 0 {
+		return 0
+	}
+	cutoff := time.Now().Add(-deviceTTL)
+	mu.Lock()
+	removed := 0
+	for id, d := range devices {
+		if !d.Online && d.LastSeen.Before(cutoff) {
+			delete(devices, id)
+			removed++
+		}
+	}
+	mu.Unlock()
+	if removed > 0 {
+		log.Printf("cleanup: removed %d offline device(s) idle > %v", removed, deviceTTL)
+		go saveDevices()
+	}
+	return removed
+}
+
+func periodicCleanup() {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+	for range ticker.C {
+		cleanupOfflineDevices()
+	}
+}
+
 func main() {
 	authToken = strings.TrimSpace(os.Getenv("MESH_TOKEN"))
 	if authToken == "" {
 		log.Fatal("MESH_TOKEN env var is required")
 	}
 
+	if v := strings.TrimSpace(os.Getenv("DEVICE_TTL_DAYS")); v != "" {
+		if days, err := strconv.Atoi(v); err == nil && days > 0 {
+			deviceTTL = time.Duration(days) * 24 * time.Hour
+			log.Printf("offline device TTL: %d days", days)
+		} else {
+			log.Printf("invalid DEVICE_TTL_DAYS=%q; cleanup disabled", v)
+		}
+	}
+
 	loadDevices()
 	go periodicSave()
+	go periodicCleanup()
 
 	http.HandleFunc("/ws", wsHandler)
 	http.HandleFunc("/api/devices", requireAuth(devicesHandler))

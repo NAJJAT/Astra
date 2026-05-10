@@ -60,6 +60,7 @@ MESH_TOKEN=<32-byte hex>
 DUCKDNS_DOMAIN=<your duckdns subdomain, no .duckdns.org>
 DUCKDNS_TOKEN=<from duckdns.org account page>
 LETSENCRYPT_EMAIL=<your email>
+DEVICE_TTL_DAYS=30                      # 0 or unset disables auto-cleanup
 ```
 
 Generate a token with:
