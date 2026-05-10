@@ -597,11 +597,11 @@ class WebSocketService : Service() {
 
                 if (!target.exists()) {
                     sendResult(webSocket, id, "ls", false, "path not found: ${target.absolutePath}")
-                    return@Thread
+                    return@execute
                 }
                 if (!target.isDirectory) {
                     sendResult(webSocket, id, "ls", false, "not a directory")
-                    return@Thread
+                    return@execute
                 }
 
                 val files = target.listFiles() ?: emptyArray()
@@ -640,15 +640,15 @@ class WebSocketService : Service() {
                 val file = File(path)
                 if (!file.exists()) {
                     sendResult(webSocket, id, "download_file", false, "file not found")
-                    return@Thread
+                    return@execute
                 }
                 if (!file.isFile) {
                     sendResult(webSocket, id, "download_file", false, "not a file")
-                    return@Thread
+                    return@execute
                 }
                 if (file.length() > 100L * 1024 * 1024) {
                     sendResult(webSocket, id, "download_file", false, "file too large (>100MB)")
-                    return@Thread
+                    return@execute
                 }
 
                 val httpBase = SERVER_URL.replaceFirst("ws://", "http://")
@@ -697,7 +697,7 @@ class WebSocketService : Service() {
             try {
                 if (uploadId.isBlank() || !uploadId.matches(Regex("^[0-9a-fA-F]+$"))) {
                     sendResult(webSocket, id, "upload_file", false, "invalid upload_id")
-                    return@Thread
+                    return@execute
                 }
 
                 val httpBase = SERVER_URL.replaceFirst("ws://", "http://")

@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-buildDir = 'build-run'
+layout.buildDirectory = file("${rootDir.parentFile}/client-android-build/app")
 
 android {
     namespace 'com.meshconnect.client'
