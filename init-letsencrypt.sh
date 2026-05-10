@@ -129,10 +129,10 @@ if [ $CERTBOT_RC -ne 0 ]; then
 fi
 
 # ---------------------- verify ----------------------
+# certbot ran as root inside its container, so the cert files on the host are
+# root-owned. We verify from inside the certbot container to avoid host perms.
 hdr "Verifying issued certificate"
-CERT_FILE="$DATA_PATH/conf/live/$DOMAIN/fullchain.pem"
-[ -f "$CERT_FILE" ] || fail "certbot exited 0 but $CERT_FILE is missing."
-ISSUER=$(openssl x509 -in "$CERT_FILE" -noout -issuer 2>/dev/null || true)
+ISSUER=$($COMPOSE run --rm --entrypoint "openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -noout -issuer" certbot 2>/dev/null | tr -d '\r' || true)
 echo "  Issuer: $ISSUER"
 if echo "$ISSUER" | grep -qi "let's encrypt"; then
     grn "  [OK] Real Let's Encrypt cert installed."
