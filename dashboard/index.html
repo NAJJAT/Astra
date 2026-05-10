@@ -290,6 +290,17 @@
             padding-top: 12px;
             border-top: 1px solid #0f172a;
         }
+        .tag-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; align-items: center; }
+        .tag-filters:empty { display: none; }
+        .tag-filter {
+            font-size: 12px; padding: 4px 12px; border-radius: 14px;
+            background: #1e293b; color: #cbd5e1; border: 1px solid #334155;
+            cursor: pointer; user-select: none;
+        }
+        .tag-filter:hover { border-color: #64748b; }
+        .tag-filter.active { background: #1e40af; color: #dbeafe; border-color: #2563eb; }
+        .tag-filter-clear { font-size: 11px; color: #64748b; background: transparent; border: 0; cursor: pointer; }
+        .tag-filter-clear:hover { color: #cbd5e1; }
         .tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 4px; align-items: center; }
         .tag {
             font-size: 11px; padding: 2px 8px; border-radius: 10px;
@@ -679,6 +690,8 @@
             <button class="btn-refresh" id="btn-refresh" onclick="manualRefresh()">↻ Refresh</button>
         </div>
 
+        <div class="tag-filters" id="tag-filters"></div>
+
         <div class="grid" id="grid">
             <div class="empty">
                 <div class="empty-icon">📱</div>
@@ -757,6 +770,10 @@
     const API   = '/api/devices';
     const TOKEN = '6c2b3174134098b304f2f7f6b433476b4c2d5eeb1725ee61966fc55ab4fdd542';
     let timer   = null;
+    const activeTagFilters = new Set(JSON.parse(localStorage.getItem('tagFilters') || '[]'));
+    function persistTagFilters() {
+        localStorage.setItem('tagFilters', JSON.stringify([...activeTagFilters]));
+    }
 
     function authFetch(input, init = {}) {
         const headers = new Headers(init.headers || {});
@@ -1241,6 +1258,8 @@
         document.getElementById('s-online').textContent = online;
         document.getElementById('s-offline').textContent= offline;
 
+        renderTagFilters(list);
+
         const grid = document.getElementById('grid');
 
         if (!list.length) {
@@ -1254,13 +1273,65 @@
             return;
         }
 
+        let filtered = list;
+        if (activeTagFilters.size) {
+            filtered = list.filter(d => (d.tags || []).some(t => activeTagFilters.has(t)));
+        }
+
         document.getElementById('device-count').textContent =
-            `${list.length} total · ${online} online`;
+            activeTagFilters.size
+                ? `${filtered.length} of ${list.length} · ${online} online`
+                : `${list.length} total · ${online} online`;
 
-        list.sort((a, b) => b.online - a.online);
+        filtered.sort((a, b) => b.online - a.online);
 
-        grid.innerHTML = list.map(renderCard).join('');
+        if (!filtered.length) {
+            grid.innerHTML = `
+                <div class="empty">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No devices match the active tag filter</h3>
+                </div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(renderCard).join('');
     }
+
+    function renderTagFilters(list) {
+        const all = new Set();
+        list.forEach(d => (d.tags || []).forEach(t => all.add(t)));
+        // drop active filters that no longer exist on any device
+        for (const t of [...activeTagFilters]) {
+            if (!all.has(t)) activeTagFilters.delete(t);
+        }
+        persistTagFilters();
+        const sorted = [...all].sort();
+        const bar = document.getElementById('tag-filters');
+        if (!sorted.length) { bar.innerHTML = ''; return; }
+        const chips = sorted.map(t => {
+            const active = activeTagFilters.has(t) ? 'active' : '';
+            return `<button class="tag-filter ${active}" data-tag-filter="${esc(t)}">${esc(t)}</button>`;
+        });
+        if (activeTagFilters.size) {
+            chips.push(`<button class="tag-filter-clear" data-tag-filter-clear>clear</button>`);
+        }
+        bar.innerHTML = chips.join('');
+    }
+
+    document.getElementById('tag-filters').addEventListener('click', e => {
+        if (e.target.closest('[data-tag-filter-clear]')) {
+            activeTagFilters.clear();
+            persistTagFilters();
+            fetchDevices();
+            return;
+        }
+        const btn = e.target.closest('[data-tag-filter]');
+        if (!btn) return;
+        const t = btn.dataset.tagFilter;
+        if (activeTagFilters.has(t)) activeTagFilters.delete(t); else activeTagFilters.add(t);
+        persistTagFilters();
+        fetchDevices();
+    });
 
     function renderCard(d) {
         const cls   = d.online ? 'online' : 'offline';
