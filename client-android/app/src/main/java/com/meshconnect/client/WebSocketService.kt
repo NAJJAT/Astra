@@ -69,7 +69,7 @@ class WebSocketService : Service() {
         const val CHANNEL_ID = "meshconnect_ch"
         const val MESSAGE_CHANNEL_ID = "meshconnect_msg"
         const val NOTIF_ID = 1
-        const val SERVER_URL = "ws://20.86.120.120:8082/ws"
+        const val SERVER_URL = "wss://meshconnect.duckdns.org/ws"
         // Must match MESH_TOKEN in server/.env
         const val AUTH_TOKEN = "6c2b3174134098b304f2f7f6b433476b4c2d5eeb1725ee61966fc55ab4fdd542"
         const val EXTRA_PROJECTION_RESULT_CODE = "projection_result_code"

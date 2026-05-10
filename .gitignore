@@ -4,6 +4,9 @@
 server/.env
 dashboard/.htpasswd
 
+# Let's Encrypt material (generated on the VM)
+certbot/
+
 # Android build outputs
 client-android/.gradle/
 client-android/build/
