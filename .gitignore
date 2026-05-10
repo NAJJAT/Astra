@@ -1,0 +1,32 @@
+# Secrets
+.env
+*.env.local
+server/.env
+dashboard/.htpasswd
+
+# Android build outputs
+client-android/.gradle/
+client-android/build/
+client-android/app/build/
+client-android/app/build-run/
+client-android/app/build-fixed/
+client-android/local.properties
+client-android/.idea/
+client-android/.kotlin/
+client-android/app/**/*.apk
+client-android/app/**/*.aab
+
+# Server build outputs
+server/server
+server/server.exe
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+
+# Data dir (runtime device state)
+data/devices.json
+data/devices.json.tmp
+data/screenshots/
+data/files/
+data/uploads/
