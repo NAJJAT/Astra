@@ -18,8 +18,8 @@ services:
       - ./dashboard:/usr/share/nginx/html:ro,Z
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro,Z
       - ./dashboard/.htpasswd:/etc/nginx/.htpasswd:ro,Z
-      - ./certbot/conf:/etc/letsencrypt:ro,Z
-      - ./certbot/www:/var/www/certbot:ro,Z
+      - ./certbot/conf:/etc/letsencrypt:ro,z
+      - ./certbot/www:/var/www/certbot:ro,z
     command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
     restart: unless-stopped
     depends_on:
@@ -29,8 +29,8 @@ services:
     image: certbot/certbot:latest
     container_name: meshconnect-certbot
     volumes:
-      - ./certbot/conf:/etc/letsencrypt:Z
-      - ./certbot/www:/var/www/certbot:Z
+      - ./certbot/conf:/etc/letsencrypt:z
+      - ./certbot/www:/var/www/certbot:z
     entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
     restart: unless-stopped
 
